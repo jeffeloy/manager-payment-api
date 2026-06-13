@@ -69,7 +69,7 @@ docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/htm
 
 ## Usuários de teste (seed)
 
-Senha padrão para todos: `password`
+Senha padrão para todos os usuários seedados, incluindo `finance`: `password`
 
 | Nome | Email | Role | País | Moeda |
 |------|-------|------|------|-------|
@@ -171,7 +171,7 @@ Retorna o perfil autenticado.
 
 ### POST `/payment-requests`
 
-Requer autenticação. Apenas `employee`.
+Requer autenticação. Apenas `employee`. A `currency` deve ser igual à moeda local cadastrada no usuário autenticado.
 
 **Body (JSON):**
 

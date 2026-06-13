@@ -6,11 +6,13 @@ use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Passport\Client;
 use Laravel\Passport\ClientRepository;
+use RuntimeException;
 
 class DatabaseSeeder extends Seeder
 {
+    private const DEFAULT_PASSWORD = 'password';
+
     public function run(): void
     {
         $this->installPassportClient();
@@ -30,7 +32,7 @@ class DatabaseSeeder extends Seeder
                 ['email' => $userData['email']],
                 [
                     'name' => $userData['name'],
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make(self::DEFAULT_PASSWORD),
                     'country' => $userData['country'],
                     'currency' => $userData['currency'],
                     'role' => $userData['role'],
@@ -45,8 +47,12 @@ class DatabaseSeeder extends Seeder
     {
         $this->command?->call('passport:keys', ['--force' => true]);
 
-        if (Client::query()->where('personal_access_client', true)->doesntExist()) {
-            app(ClientRepository::class)->createPersonalAccessGrantClient('Personal Access Client');
+        $clients = app(ClientRepository::class);
+
+        try {
+            $clients->personalAccessClient('users');
+        } catch (RuntimeException) {
+            $clients->createPersonalAccessGrantClient('Personal Access Client', 'users');
         }
     }
 }

@@ -51,6 +51,27 @@ class PaymentRequestTest extends TestCase
             ->assertJsonPath('data.status', 'pending');
     }
 
+    public function test_employee_cannot_create_payment_request_with_different_currency_than_their_local_currency(): void
+    {
+        Http::fake();
+
+        $employee = User::factory()->create([
+            'role' => UserRole::Employee,
+            'currency' => 'BRL',
+        ]);
+
+        Passport::actingAs($employee);
+
+        $this->postJson('/api/payment-requests', [
+            'title' => 'Office supplies',
+            'amount' => 595,
+            'currency' => 'USD',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('currency');
+
+        Http::assertNothingSent();
+    }
+
     public function test_employee_only_sees_own_payment_requests(): void
     {
         $employee = User::factory()->create(['role' => UserRole::Employee]);

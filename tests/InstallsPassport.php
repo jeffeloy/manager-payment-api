@@ -2,8 +2,8 @@
 
 namespace Tests;
 
-use Laravel\Passport\Client;
 use Laravel\Passport\ClientRepository;
+use RuntimeException;
 
 trait InstallsPassport
 {
@@ -11,8 +11,12 @@ trait InstallsPassport
     {
         $this->artisan('passport:keys', ['--force' => true]);
 
-        if (Client::query()->where('personal_access_client', true)->doesntExist()) {
-            app(ClientRepository::class)->createPersonalAccessGrantClient('Test Personal Access Client');
+        $clients = app(ClientRepository::class);
+
+        try {
+            $clients->personalAccessClient('users');
+        } catch (RuntimeException) {
+            $clients->createPersonalAccessGrantClient('Test Personal Access Client', 'users');
         }
     }
 }

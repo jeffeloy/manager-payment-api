@@ -3,6 +3,7 @@
 namespace App\Http\Requests\PaymentRequest;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StorePaymentRequestRequest extends FormRequest
 {
@@ -17,6 +18,22 @@ class StorePaymentRequestRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'gt:0'],
             'currency' => ['required', 'string', 'size:3', 'regex:/^[A-Z]{3}$/'],
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $userCurrency = $this->user()?->currency;
+
+                if ($userCurrency !== null && $this->currency !== $userCurrency) {
+                    $validator->errors()->add(
+                        'currency',
+                        "The currency must match your local currency [{$userCurrency}]."
+                    );
+                }
+            },
         ];
     }
 
