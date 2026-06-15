@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\PaymentRequestService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class PaymentRequestController extends Controller
 {
@@ -22,7 +23,7 @@ class PaymentRequestController extends Controller
     ) {
     }
 
-    public function index(ListPaymentRequestsRequest $request): JsonResponse
+    public function index(ListPaymentRequestsRequest $request)
     {
         $this->authorize('viewAny', PaymentRequest::class);
 
@@ -41,8 +42,20 @@ class PaymentRequestController extends Controller
             $query->where('status', $request->string('status')->toString());
         }
 
-        return response()->json([
-            'data' => PaymentRequestResource::collection($query->get()),
+        $requests = PaymentRequestResource::collection($query->get());
+        $stats = (clone $query)->selectRaw("
+            count(case when status = 'pending' then 1 end) as pending,
+            count(case when status = 'approved' then 1 end) as approved,
+            count(case when status = 'rejected' then 1 end) as rejected
+        ")->first();
+
+        return Inertia::render('Dashboard', [
+            'paymentRequests' => $requests,
+            'stats' => [
+                'pending' => $stats->pending,
+                'approved' => $stats->approved,
+                'rejected' => $stats->rejected,
+            ]
         ]);
     }
 

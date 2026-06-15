@@ -8,6 +8,7 @@ use App\Services\ExchangerateApiProvider;
 use App\Services\RestCountriesCurrencyProvider;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
+use Illuminate\Support\Facades\Vite;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,5 +29,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Passport::tokensExpireIn(now()->addDays(15));
         Passport::refreshTokensExpireIn(now()->addDays(30));
+        Vite::prefetch(concurrency: 3);
     }
 }
