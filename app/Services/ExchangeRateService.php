@@ -19,6 +19,6 @@ class ExchangeRateService
 
     public function convertToEur(float $amount, float $exchangeRate): float
     {
-        return round($amount / $exchangeRate, 4);
+        return round($amount / $exchangeRate, 2);
     }
 }
