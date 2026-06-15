@@ -106,8 +106,7 @@ Registra um funcionário (`employee`).
   "email": "ana@example.com",
   "password": "password123",
   "password_confirmation": "password123",
-  "country": "BR",
-  "currency": "BRL"
+  "country": "BR"
 }
 ```
 
