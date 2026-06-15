@@ -19,7 +19,6 @@ class RegisterRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'country' => ['required', 'string', 'size:2', 'regex:/^[A-Z]{2}$/'],
-            'currency' => ['required', 'string', 'size:3', 'regex:/^[A-Z]{3}$/'],
             'role' => ['sometimes', 'string', Rule::in(['employee'])],
         ];
     }
@@ -28,7 +27,6 @@ class RegisterRequest extends FormRequest
     {
         $this->merge([
             'country' => strtoupper((string) $this->country),
-            'currency' => strtoupper((string) $this->currency),
         ]);
     }
 }

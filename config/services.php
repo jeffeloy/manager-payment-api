@@ -40,4 +40,9 @@ return [
         'source' => env('EXCHANGE_RATE_SOURCE', 'https://api.exchangerate-api.com'),
     ],
 
+    'rest_countries' => [
+        'base_url' => env('REST_COUNTRIES_API_URL', 'https://api.restcountries.com/countries/v5'),
+        'api_key' => env('REST_COUNTRIES_API_KEY'),
+    ],
+
 ];

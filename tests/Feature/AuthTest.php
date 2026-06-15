@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\InstallsPassport;
 use Tests\TestCase;
 
@@ -21,13 +22,24 @@ class AuthTest extends TestCase
 
     public function test_user_can_register_and_receive_access_token(): void
     {
+        Http::fake([
+            '*/code?q=BR*' => Http::response([
+                'data' => [
+                    'objects' => [
+                        [
+                            'currencies' => [['code' => 'BRL']]
+                        ]
+                    ]
+                ]
+            ], 200),
+        ]);
+
         $response = $this->postJson('/api/register', [
             'name' => 'New Employee',
             'email' => 'new.employee@manager.test',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'country' => 'BR',
-            'currency' => 'BRL',
         ]);
 
         $response->assertCreated()
