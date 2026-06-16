@@ -8,20 +8,18 @@
         <TableHead class="text-xs font-medium uppercase tracking-wide text-slate-500">Currency</TableHead>
         <TableHead class="text-xs font-medium uppercase tracking-wide text-slate-500">Date</TableHead>
         <TableHead class="text-xs font-medium uppercase tracking-wide text-slate-500">Status</TableHead>
-        <TableHead class="px-6 text-right text-xs font-medium uppercase tracking-wide text-slate-500">Actions</TableHead>
+        <TableHead class="px-6 text-right text-xs font-medium uppercase tracking-wide text-slate-500">Actions
+        </TableHead>
       </TableRow>
     </TableHeader>
 
     <TableBody>
-      <TableRow
-        v-for="req in requests"
-        :key="req.id"
-        class="border-slate-100 transition-colors hover:bg-slate-50/60"
-      >
+      <TableRow v-for="req in requests" :key="req.id" class="border-slate-100 transition-colors hover:bg-slate-50/60">
         <!-- Employee -->
         <TableCell class="px-6">
           <div class="flex items-center gap-3">
-            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-600">
+            <div
+              class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-600">
               {{ initials(req.user.name) }}
             </div>
             <div>
@@ -72,11 +70,13 @@
 
               <template v-if="isFinance && req.status === 'pending'">
                 <DropdownMenuSeparator />
-                <DropdownMenuItem class="text-emerald-600 focus:text-emerald-700" @click="$emit('approve', req)">
+                <DropdownMenuItem class="text-emerald-600 focus:text-emerald-700"
+                  @click.prevent="$emit('open-action', req, 'approve')">
                   <Check class="mr-2 h-4 w-4" />
                   Approve
                 </DropdownMenuItem>
-                <DropdownMenuItem class="text-rose-600 focus:text-rose-700" @click="$emit('reject', req)">
+                <DropdownMenuItem class="text-rose-600 focus:text-rose-700"
+                  @click.prevent="$emit('open-action', req, 'reject')">
                   <X class="mr-2 h-4 w-4" />
                   Reject
                 </DropdownMenuItem>
@@ -119,7 +119,7 @@ defineProps({
   requests: { type: Array, default: () => [] },
   isFinance: { type: Boolean, default: false },
 })
-defineEmits(['view', 'approve', 'reject'])
+defineEmits(['view', 'open-action']);
 
 function initials(name) {
   return name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()

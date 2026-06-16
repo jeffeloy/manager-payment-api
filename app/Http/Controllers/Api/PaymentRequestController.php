@@ -49,7 +49,7 @@ class PaymentRequestController extends Controller
             count(case when status = 'rejected' then 1 end) as rejected
         ")->first();
 
-        return Inertia::render('Dashboard', [
+        return Inertia::render('PaymentRequest/Index', [
             'paymentRequests' => $requests,
             'stats' => [
                 'pending' => $stats->pending,
@@ -59,7 +59,7 @@ class PaymentRequestController extends Controller
         ]);
     }
 
-    public function store(StorePaymentRequestRequest $request): JsonResponse
+    public function store(StorePaymentRequestRequest $request)
     {
         $this->authorize('create', PaymentRequest::class);
 
@@ -76,10 +76,7 @@ class PaymentRequestController extends Controller
 
         $paymentRequest->load(['user', 'reviewer']);
 
-        return response()->json([
-            'message' => 'Payment request created successfully.',
-            'data' => PaymentRequestResource::make($paymentRequest),
-        ], 201);
+        return to_route('dashboard')->with('success', 'Solicitação criada com sucesso!');
     }
 
     public function show(Request $request, PaymentRequest $paymentRequest): JsonResponse
@@ -93,7 +90,7 @@ class PaymentRequestController extends Controller
         ]);
     }
 
-    public function approve(Request $request, PaymentRequest $paymentRequest): JsonResponse
+    public function approve(Request $request, PaymentRequest $paymentRequest)
     {
         $this->authorize('approve', $paymentRequest);
 
@@ -108,13 +105,14 @@ class PaymentRequestController extends Controller
             ], 409);
         }
 
-        return response()->json([
-            'message' => 'Payment request approved successfully.',
-            'data' => PaymentRequestResource::make($paymentRequest),
-        ]);
+        // return response()->json([
+        //     'message' => 'Payment request approved successfully.',
+        //     'data' => PaymentRequestResource::make($paymentRequest),
+        // ]);
+        return to_route('dashboard')->with('success', 'Solicitação aprovada com sucesso!');
     }
 
-    public function reject(RejectPaymentRequestRequest $request, PaymentRequest $paymentRequest): JsonResponse
+    public function reject(RejectPaymentRequestRequest $request, PaymentRequest $paymentRequest)
     {
         $this->authorize('reject', $paymentRequest);
 
@@ -130,9 +128,10 @@ class PaymentRequestController extends Controller
             ], 409);
         }
 
-        return response()->json([
-            'message' => 'Payment request rejected successfully.',
-            'data' => PaymentRequestResource::make($paymentRequest),
-        ]);
+        // return response()->json([
+        //     'message' => 'Payment request rejected successfully.',
+        //     'data' => PaymentRequestResource::make($paymentRequest),
+        // ]);
+        return to_route('dashboard')->with('success', 'Solicitação rejeitada com sucesso!');
     }
 }
