@@ -47,35 +47,36 @@
                     <p class="text-xs text-slate-500">Manage and approve employee payment requests</p>
                 </div>
                 <div class="hidden sm:ms-6 sm:flex sm:items-center">
-                    <!-- Settings Dropdown -->
-                    <div class="relative ms-3">
-                        <Dropdown align="right" width="48">
-                            <template #trigger>
-                                <span class="inline-flex rounded-md">
-                                    <button type="button"
-                                        class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none">
-                                        {{ $page.props.auth.user.name }}
-
-                                        <svg class="-me-0.5 ms-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd"
-                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                clip-rule="evenodd" />
-                                        </svg>
-                                    </button>
+                    <!-- User menu (shadcn-vue DropdownMenu) -->
+                    <DropdownMenu>
+                        <DropdownMenuTrigger as-child>
+                            <button type="button"
+                                class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">
+                                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-medium text-white">
+                                    {{ userInitials }}
                                 </span>
-                            </template>
+                                {{ $page.props.auth.user.name }}
+                                <ChevronDown class="h-4 w-4 text-slate-400" />
+                            </button>
+                        </DropdownMenuTrigger>
 
-                            <template #content>
-                                <DropdownLink :href="route('profile.edit')">
+                        <DropdownMenuContent align="end" class="w-48">
+                            <DropdownMenuLabel>{{ $page.props.auth.user.email }}</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem as-child>
+                                <Link :href="route('profile.edit')" class="w-full">
+                                    <User class="h-4 w-4 text-slate-400" />
                                     Profile
-                                </DropdownLink>
-                                <DropdownLink :href="route('logout')" method="post" as="button">
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem as-child>
+                                <Link :href="route('logout')" method="post" as="button" class="w-full text-rose-600 focus:text-rose-700">
+                                    <LogOut class="h-4 w-4" />
                                     Log Out
-                                </DropdownLink>
-                            </template>
-                        </Dropdown>
-                    </div>
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </header>
 
@@ -115,6 +116,7 @@
 
 <script setup>
 import { ref, computed, toRaw } from 'vue'
+import { Link } from '@inertiajs/vue3'
 import {
     Wallet,
     LayoutDashboard,
@@ -126,12 +128,21 @@ import {
     CheckCircle2,
     Search,
     CircleX,
+    ChevronDown,
+    User,
+    LogOut,
 } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
 import StatCard from './StatCard.vue'
 import PaymentTable from './PaymentTable.vue'
-import Dropdown from '@/Components/Dropdown.vue'
-import DropdownLink from '@/Components/DropdownLink.vue'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { usePage } from '@inertiajs/vue3'
 
 const props = defineProps({
     paymentRequests: {
@@ -141,10 +152,17 @@ const props = defineProps({
     stats: Object
 });
 
+const page = usePage()
+
 const collapsed = ref(false)
 const isFinance = ref(true)
 const activeNav = ref('dashboard')
 const search = ref('')
+
+const userInitials = computed(() => {
+    const name = page.props.auth?.user?.name ?? ''
+    return name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
+})
 
 const navItems = computed(() => [
     { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -159,18 +177,16 @@ const requests = toRaw(props.paymentRequests.data);
 const filteredRequests = computed(() => {
     const q = search.value.trim().toLowerCase()
     if (!q) return requests
-    return requests;
+    return requests.filter((r) => (r.employee ?? '').toLowerCase().includes(q))
 })
 
 const displayStats = computed(() => {
     const stats = toRaw(props.stats);
     if (stats) return stats;
     return {
-        pending: requests.value.filter((r) => r.status === 'pending').length,
-        approved: requests.value.filter((r) => r.status === 'approved').length,
-        volume: requests.value
-            .filter((r) => r.status === 'approved')
-            .reduce((sum, r) => sum + (Number(r.amount_eur) || 0), 0),
+        pending: requests.filter((r) => r.status === 'pending').length,
+        approved: requests.filter((r) => r.status === 'approved').length,
+        rejected: requests.filter((r) => r.status === 'rejected').length,
     }
 })
 
@@ -178,11 +194,11 @@ function onView(req) {
     console.log('[v0] View details:', req)
 }
 function onApprove(req) {
-    const target = requests.value.find((r) => r.id === req.id)
+    const target = requests.find((r) => r.id === req.id)
     if (target) target.status = 'approved'
 }
 function onReject(req) {
-    const target = requests.value.find((r) => r.id === req.id)
+    const target = requests.find((r) => r.id === req.id)
     if (target) target.status = 'rejected'
 }
 </script>

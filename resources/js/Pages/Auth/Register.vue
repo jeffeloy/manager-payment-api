@@ -1,115 +1,175 @@
 <script setup lang="ts">
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3'
+import { Wallet, Loader2 } from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+
+const countries = [
+  { code: 'PT', name: 'Portugal' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'FR', name: 'France' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'IE', name: 'Ireland' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'NL', name: 'Netherlands' },
+  { code: 'BE', name: 'Belgium' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'US', name: 'United States' },
+  { code: 'BR', name: 'Brazil' },
+  { code: 'JP', name: 'Japan' },
+]
 
 const form = useForm({
-    name: '',
-    email: '',
-    password: '',
-    password_confirmation: '',
-});
+  name: '',
+  email: '',
+  country: '',
+  password: '',
+  password_confirmation: '',
+})
 
 const submit = () => {
-    form.post(route('register'), {
-        onFinish: () => {
-            form.reset('password', 'password_confirmation');
-        },
-    });
-};
+  form.post(route('register'), {
+    onFinish: () => {
+      form.reset('password', 'password_confirmation')
+    },
+  })
+}
 </script>
 
 <template>
-    <GuestLayout>
-        <Head title="Register" />
+  <Head title="Register" />
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="name" value="Name" />
+  <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 font-sans text-slate-800 antialiased">
+    <div class="w-full max-w-md">
+      <!-- Brand -->
+      <div class="mb-8 flex flex-col items-center text-center">
+        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900 text-white">
+          <Wallet class="h-6 w-6" />
+        </div>
+        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Create your account</h1>
+        <p class="mt-1 text-sm text-slate-500">Get started with PayFlow today</p>
+      </div>
 
-                <TextInput
-                    id="name"
-                    type="text"
-                    class="mt-1 block w-full"
-                    v-model="form.name"
-                    required
-                    autofocus
-                    autocomplete="name"
-                />
+      <!-- Card -->
+      <div class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+        <form class="space-y-5" @submit.prevent="submit">
+          <!-- Name -->
+          <div class="space-y-2">
+            <Label for="name">Name</Label>
+            <Input
+              id="name"
+              v-model="form.name"
+              type="text"
+              required
+              autofocus
+              autocomplete="name"
+              placeholder="John Doe"
+            />
+            <p v-if="form.errors.name" class="text-sm font-medium text-rose-600">
+              {{ form.errors.name }}
+            </p>
+          </div>
 
-                <InputError class="mt-2" :message="form.errors.name" />
-            </div>
+          <!-- Email -->
+          <div class="space-y-2">
+            <Label for="email">Email</Label>
+            <Input
+              id="email"
+              v-model="form.email"
+              type="email"
+              required
+              autocomplete="username"
+              placeholder="you@company.com"
+            />
+            <p v-if="form.errors.email" class="text-sm font-medium text-rose-600">
+              {{ form.errors.email }}
+            </p>
+          </div>
 
-            <div class="mt-4">
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autocomplete="username"
-                />
-
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
-
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password"
-                    required
-                    autocomplete="new-password"
-                />
-
-                <InputError class="mt-2" :message="form.errors.password" />
-            </div>
-
-            <div class="mt-4">
-                <InputLabel
-                    for="password_confirmation"
-                    value="Confirm Password"
-                />
-
-                <TextInput
-                    id="password_confirmation"
-                    type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password_confirmation"
-                    required
-                    autocomplete="new-password"
-                />
-
-                <InputError
-                    class="mt-2"
-                    :message="form.errors.password_confirmation"
-                />
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
-                <Link
-                    :href="route('login')"
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          <!-- Country -->
+          <div class="space-y-2">
+            <Label for="country">Country</Label>
+            <Select v-model="form.country">
+              <SelectTrigger id="country" class="w-full">
+                <SelectValue placeholder="Select your country" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="country in countries"
+                  :key="country.code"
+                  :value="country.code"
                 >
-                    Already registered?
-                </Link>
+                  {{ country.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p v-if="form.errors.country" class="text-sm font-medium text-rose-600">
+              {{ form.errors.country }}
+            </p>
+          </div>
 
-                <PrimaryButton
-                    class="ms-4"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Register
-                </PrimaryButton>
-            </div>
+          <!-- Password -->
+          <div class="space-y-2">
+            <Label for="password">Password</Label>
+            <Input
+              id="password"
+              v-model="form.password"
+              type="password"
+              required
+              autocomplete="new-password"
+              placeholder="••••••••"
+            />
+            <p v-if="form.errors.password" class="text-sm font-medium text-rose-600">
+              {{ form.errors.password }}
+            </p>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="space-y-2">
+            <Label for="password_confirmation">Confirm Password</Label>
+            <Input
+              id="password_confirmation"
+              v-model="form.password_confirmation"
+              type="password"
+              required
+              autocomplete="new-password"
+              placeholder="••••••••"
+            />
+            <p v-if="form.errors.password_confirmation" class="text-sm font-medium text-rose-600">
+              {{ form.errors.password_confirmation }}
+            </p>
+          </div>
+
+          <!-- Submit -->
+          <Button
+            type="submit"
+            class="w-full"
+            :class="{ 'opacity-70': form.processing }"
+            :disabled="form.processing"
+          >
+            <Loader2 v-if="form.processing" class="mr-2 h-4 w-4 animate-spin" />
+            {{ form.processing ? 'Creating account...' : 'Create account' }}
+          </Button>
         </form>
-    </GuestLayout>
+      </div>
+
+      <p class="mt-6 text-center text-sm text-slate-500">
+        Already registered?
+        <Link
+          :href="route('login')"
+          class="font-medium text-slate-900 underline-offset-4 hover:underline"
+        >
+          Log in
+        </Link>
+      </p>
+    </div>
+  </div>
 </template>
