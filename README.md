@@ -119,26 +119,66 @@ Autenticação web (`/login`, `/register`) permanece nos controllers Breeze em `
 
 Base URL: `/api`
 
-### POST `/register`
+### Autenticação
 
-Registra um funcionário (`employee`). O campo `currency` deve corresponder ao país selecionado (mapeamento em `config/countries.php`).
+Rotas protegidas exigem o header:
 
-**Body (JSON):**
+```
+Authorization: Bearer {access_token}
+```
+
+O token é retornado em `POST /register` ou `POST /login` no campo `access_token`. Rotas públicas: `/register`, `/login`. Demais rotas listadas abaixo requerem autenticação.
+
+### Formato de erros
+
+| Status | Quando |
+|--------|--------|
+| `401` | Token ausente, inválido ou expirado; credenciais de login inválidas |
+| `403` | Usuário autenticado sem permissão (ex.: employee tentando aprovar) |
+| `404` | Recurso não encontrado |
+| `409` | Conflito de estado (ex.: aprovar solicitação que não está `pending`) |
+| `422` | Falha de validação |
+| `503` | Taxa de câmbio indisponível na criação de solicitação |
+
+**Exemplo 422 (validação):**
 
 ```json
 {
-  "name": "Ana Silva",
-  "email": "ana@example.com",
-  "password": "password123",
-  "password_confirmation": "password123",
-  "country": "BR",
-  "currency": "BRL"
+  "message": "The currency field must match your local currency [BRL].",
+  "errors": {
+    "currency": [
+      "The currency must match your local currency [BRL]."
+    ]
+  }
 }
 ```
 
+**Exemplo 401 (credenciais inválidas no login):**
+
+```json
+{
+  "message": "Invalid credentials."
+}
+```
+
+---
+
+### POST `/register`
+
+Registra um funcionário (`employee`). A `currency` deve corresponder ao país (`config/countries.php`).
+
+| Parâmetro | In | Tipo | Obrigatório | Descrição |
+|-----------|-----|------|-------------|-----------|
+| `name` | body | string | sim | Nome completo (max 255) |
+| `email` | body | string | sim | E-mail único |
+| `password` | body | string | sim | Mínimo 8 caracteres |
+| `password_confirmation` | body | string | sim | Deve coincidir com `password` |
+| `country` | body | string | sim | ISO 3166-1 alpha-2 (ex.: `BR`) |
+| `currency` | body | string | sim | ISO 4217 (ex.: `BRL`); deve corresponder ao país |
+
 **Países suportados (country → currency):** PT, ES, FR, DE, IE, IT, NL, BE → EUR; GB → GBP; US → USD; BR → BRL; JP → JPY.
 
-**Erros:** `422` validação (inclui currency incompatível com country).
+**Auth:** não
 
 **Resposta 201:**
 
@@ -151,23 +191,27 @@ Registra um funcionário (`employee`). O campo `currency` deve corresponder ao p
     "id": 1,
     "name": "Ana Silva",
     "email": "ana@example.com",
+    "email_verified_at": null,
     "role": "employee",
     "country": "BR",
-    "currency": "BRL"
+    "currency": "BRL",
+    "created_at": "2026-06-12T10:00:00.000000Z"
   }
 }
 ```
 
+**Erros:** `422` (validação, incluindo currency incompatível com country).
+
+---
+
 ### POST `/login`
 
-**Body (JSON):**
+| Parâmetro | In | Tipo | Obrigatório | Descrição |
+|-----------|-----|------|-------------|-----------|
+| `email` | body | string | sim | E-mail cadastrado |
+| `password` | body | string | sim | Senha do usuário |
 
-```json
-{
-  "email": "ana.silva@manager.test",
-  "password": "password"
-}
-```
+**Auth:** não
 
 **Resposta 200:**
 
@@ -176,15 +220,32 @@ Registra um funcionário (`employee`). O campo `currency` deve corresponder ao p
   "message": "Login successful.",
   "access_token": "eyJ...",
   "token_type": "Bearer",
-  "user": { "...": "..." }
+  "user": {
+    "id": 1,
+    "name": "Ana Silva",
+    "email": "ana.silva@manager.test",
+    "email_verified_at": null,
+    "role": "employee",
+    "country": "BR",
+    "currency": "BRL",
+    "created_at": "2026-06-12T10:00:00.000000Z"
+  }
 }
 ```
 
-**Erro 401:** credenciais inválidas.
+**Erros:** `401` credenciais inválidas; `422` validação.
+
+---
 
 ### POST `/logout`
 
-Requer header `Authorization: Bearer {token}`.
+Revoga o token de acesso atual.
+
+| Parâmetro | In | Tipo | Obrigatório | Descrição |
+|-----------|-----|------|-------------|-----------|
+| — | — | — | — | Sem body |
+
+**Auth:** sim
 
 **Resposta 200:**
 
@@ -194,23 +255,52 @@ Requer header `Authorization: Bearer {token}`.
 }
 ```
 
+**Erros:** `401` sem token válido.
+
+---
+
 ### GET `/user`
 
-Retorna o perfil autenticado.
+Retorna o perfil do usuário autenticado.
 
-### POST `/payment-requests`
+| Parâmetro | In | Tipo | Obrigatório | Descrição |
+|-----------|-----|------|-------------|-----------|
+| — | — | — | — | Sem parâmetros |
 
-Requer autenticação. Apenas `employee`. A `currency` deve ser igual à moeda local cadastrada no usuário autenticado.
+**Auth:** sim
 
-**Body (JSON):**
+**Resposta 200:**
 
 ```json
 {
-  "title": "Office supplies reimbursement",
-  "amount": 595,
-  "currency": "BRL"
+  "data": {
+    "id": 1,
+    "name": "Ana Silva",
+    "email": "ana.silva@manager.test",
+    "email_verified_at": null,
+    "role": "employee",
+    "country": "BR",
+    "currency": "BRL",
+    "created_at": "2026-06-12T10:00:00.000000Z"
+  }
 }
 ```
+
+**Erros:** `401` sem token válido.
+
+---
+
+### POST `/payment-requests`
+
+Cria uma solicitação de pagamento. Apenas `employee`. A `currency` deve ser igual à moeda local do usuário autenticado. A taxa de câmbio é obtida na criação e armazenada de forma imutável.
+
+| Parâmetro | In | Tipo | Obrigatório | Descrição |
+|-----------|-----|------|-------------|-----------|
+| `title` | body | string | sim | Descrição (max 255) |
+| `amount` | body | number | sim | Valor na moeda local (> 0) |
+| `currency` | body | string | sim | ISO 4217; deve coincidir com a moeda do usuário |
+
+**Auth:** sim (role `employee`)
 
 **Resposta 201:**
 
@@ -226,46 +316,171 @@ Requer autenticação. Apenas `employee`. A `currency` deve ser igual à moeda l
     "exchange_rate_source": "https://api.exchangerate-api.com",
     "exchange_rate_fetched_at": "2026-06-12T10:00:00.000000Z",
     "amount_eur": 100,
-    "status": "pending"
+    "status": "pending",
+    "rejection_reason": null,
+    "reviewed_at": null,
+    "created_at": "2026-06-12T10:00:00.000000Z",
+    "updated_at": "2026-06-12T10:00:00.000000Z",
+    "user": {
+      "id": 1,
+      "name": "Ana Silva",
+      "email": "ana.silva@manager.test",
+      "email_verified_at": null,
+      "role": "employee",
+      "country": "BR",
+      "currency": "BRL",
+      "created_at": "2026-06-12T10:00:00.000000Z"
+    },
+    "reviewed_by": null
   }
 }
 ```
 
-**Erros:** `422` validação, `503` taxa indisponível.
+**Erros:** `403` (finance não pode criar), `422` (validação), `503` (taxa de câmbio indisponível).
+
+---
 
 ### GET `/payment-requests`
 
-Lista solicitações. Funcionários veem apenas as próprias; finance vê todas.
+Lista solicitações. Employees veem apenas as próprias; finance vê todas.
 
-**Query params:** `status` (`pending`, `approved`, `rejected`, `expired`)
+| Parâmetro | In | Tipo | Obrigatório | Descrição |
+|-----------|-----|------|-------------|-----------|
+| `status` | query | string | não | Filtro: `pending`, `approved`, `rejected`, `expired` |
 
-**Exemplo:** `/api/payment-requests?status=pending`
+**Auth:** sim
 
-### GET `/payment-requests/{id}`
+**Exemplo:** `GET /api/payment-requests?status=pending`
 
-Detalhe de uma solicitação (própria ou qualquer, se finance).
-
-### PATCH `/payment-requests/{id}/approve`
-
-Requer role `finance`. Apenas solicitações `pending`.
-
-**Resposta 200:** solicitação com `status: approved`.
-
-**Erros:** `403` sem permissão, `409` status inválido.
-
-### PATCH `/payment-requests/{id}/reject`
-
-Requer role `finance`.
-
-**Body (JSON):**
+**Resposta 200:**
 
 ```json
 {
-  "rejection_reason": "Missing receipt attachment."
+  "data": [
+    {
+      "id": 1,
+      "title": "Office supplies reimbursement",
+      "amount": 595,
+      "currency": "BRL",
+      "exchange_rate": 5.95,
+      "exchange_rate_source": "https://api.exchangerate-api.com",
+      "exchange_rate_fetched_at": "2026-06-12T10:00:00.000000Z",
+      "amount_eur": 100,
+      "status": "pending",
+      "rejection_reason": null,
+      "reviewed_at": null,
+      "created_at": "2026-06-12T10:00:00.000000Z",
+      "updated_at": "2026-06-12T10:00:00.000000Z",
+      "user": {
+        "id": 1,
+        "name": "Ana Silva",
+        "email": "ana.silva@manager.test",
+        "email_verified_at": null,
+        "role": "employee",
+        "country": "BR",
+        "currency": "BRL",
+        "created_at": "2026-06-12T10:00:00.000000Z"
+      },
+      "reviewed_by": null
+    }
+  ]
 }
 ```
 
-**Resposta 200:** solicitação com `status: rejected`.
+**Erros:** `401`, `422` (status inválido).
+
+---
+
+### GET `/payment-requests/{id}`
+
+Detalhe de uma solicitação. Employee acessa apenas as próprias; finance acessa qualquer uma.
+
+| Parâmetro | In | Tipo | Obrigatório | Descrição |
+|-----------|-----|------|-------------|-----------|
+| `id` | path | integer | sim | ID da solicitação |
+
+**Auth:** sim
+
+**Resposta 200:** mesmo formato de um item em `GET /payment-requests` (objeto em `data`).
+
+**Erros:** `401`, `403` (employee tentando ver solicitação de outro), `404` (ID inexistente).
+
+---
+
+### PATCH `/payment-requests/{id}/approve`
+
+Aprova uma solicitação `pending`. Apenas `finance`.
+
+| Parâmetro | In | Tipo | Obrigatório | Descrição |
+|-----------|-----|------|-------------|-----------|
+| `id` | path | integer | sim | ID da solicitação |
+
+**Auth:** sim (role `finance`)
+
+**Resposta 200:**
+
+```json
+{
+  "message": "Payment request approved successfully.",
+  "data": {
+    "id": 1,
+    "title": "Office supplies reimbursement",
+    "amount": 595,
+    "currency": "BRL",
+    "exchange_rate": 5.95,
+    "exchange_rate_source": "https://api.exchangerate-api.com",
+    "exchange_rate_fetched_at": "2026-06-12T10:00:00.000000Z",
+    "amount_eur": 100,
+    "status": "approved",
+    "rejection_reason": null,
+    "reviewed_at": "2026-06-12T11:00:00.000000Z",
+    "created_at": "2026-06-12T10:00:00.000000Z",
+    "updated_at": "2026-06-12T11:00:00.000000Z"
+  }
+}
+```
+
+**Erros:** `403` (employee, ou solicitação que não está `pending`), `404`.
+
+---
+
+### PATCH `/payment-requests/{id}/reject`
+
+Rejeita uma solicitação `pending`. Apenas `finance`.
+
+| Parâmetro | In | Tipo | Obrigatório | Descrição |
+|-----------|-----|------|-------------|-----------|
+| `id` | path | integer | sim | ID da solicitação |
+| `rejection_reason` | body | string | sim | Motivo da rejeição (max 1000) |
+
+**Auth:** sim (role `finance`)
+
+**Resposta 200:**
+
+```json
+{
+  "message": "Payment request rejected successfully.",
+  "data": {
+    "id": 1,
+    "title": "Office supplies reimbursement",
+    "amount": 595,
+    "currency": "BRL",
+    "exchange_rate": 5.95,
+    "exchange_rate_source": "https://api.exchangerate-api.com",
+    "exchange_rate_fetched_at": "2026-06-12T10:00:00.000000Z",
+    "amount_eur": 100,
+    "status": "rejected",
+    "rejection_reason": "Missing receipt attachment.",
+    "reviewed_at": "2026-06-12T11:00:00.000000Z",
+    "created_at": "2026-06-12T10:00:00.000000Z",
+    "updated_at": "2026-06-12T11:00:00.000000Z"
+  }
+}
+```
+
+**Erros:** `403`, `409`, `422` (`rejection_reason` ausente), `404`.
+
+---
 
 ## Testes
 
@@ -273,13 +488,33 @@ Requer role `finance`.
 php artisan test
 ```
 
-Cobertura principal:
+### Testes unitários (funcionalidades críticas)
 
-- Integração com taxa de câmbio (mock HTTP)
-- Serviço de solicitações (criar, aprovar, rejeitar, expirar)
-- Autenticação (register, login, logout)
-- Autorização employee vs finance
-- Comando de expiração (> 48h)
+| Área | Arquivo | Cobertura |
+|------|---------|-----------|
+| Serviço de solicitações | `tests/Unit/PaymentRequestServiceTest.php` | Criar, aprovar, rejeitar, expirar, conflito 409, escopo employee/finance, stats |
+| Provedor de câmbio | `tests/Unit/ExchangerateApiProviderTest.php` | Fetch, provider indisponível, moeda ausente |
+
+### Testes de integração da API
+
+| Endpoint | Arquivo | Cenários |
+|----------|---------|----------|
+| `POST /register` | `tests/Feature/AuthTest.php` | Registro com token; currency/country inválidos |
+| `POST /login` | `tests/Feature/AuthTest.php` | Login; credenciais inválidas (401) |
+| `POST /logout` | `tests/Feature/AuthTest.php` | Logout com token |
+| `GET /user` | `tests/Feature/AuthTest.php` | Perfil autenticado; 401 sem token |
+| `POST /payment-requests` | `tests/Feature/PaymentRequestTest.php` | Criar com taxa; currency inválida; 503; finance 403 |
+| `GET /payment-requests` | `tests/Feature/PaymentRequestTest.php` | Escopo employee; filtro finance |
+| `GET /payment-requests/{id}` | `tests/Feature/PaymentRequestTest.php` | Show próprio; 403 cross-user |
+| `PATCH .../approve` | `tests/Feature/PaymentRequestTest.php` | Aprovar; employee 403; 403 non-pending |
+| `PATCH .../reject` | `tests/Feature/PaymentRequestTest.php` | Rejeitar; 422 sem motivo |
+
+### Outros
+
+| Área | Arquivo |
+|------|---------|
+| Expiração automática (> 48h) | `tests/Feature/ExpirePendingPaymentRequestsTest.php` |
+| UI demo (Inertia) | `tests/Feature/Web/PaymentRequestWebTest.php` |
 
 ## Estrutura relevante
 
