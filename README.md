@@ -531,13 +531,3 @@ database/seeders/
 tests/Unit/
 tests/Feature/
 ```
-
-## Git / publicação
-
-```bash
-git init
-git add .
-git commit -m "Initial implementation of manager payment API"
-git remote add origin <url-do-repositorio>
-git push -u origin main
-```
