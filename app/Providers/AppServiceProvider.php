@@ -6,6 +6,7 @@ use App\Contracts\ExchangeRateProviderInterface;
 use App\Models\PaymentRequest;
 use App\Policies\PaymentRequestPolicy;
 use App\Services\ExchangerateApiProvider;
+use App\Support\PassportKeyPermissions;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
@@ -24,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(PaymentRequest::class, PaymentRequestPolicy::class);
+
+        PassportKeyPermissions::fix();
 
         Passport::tokensExpireIn(now()->addDays(15));
         Passport::refreshTokensExpireIn(now()->addDays(30));

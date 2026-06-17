@@ -1,10 +1,8 @@
 <?php
 
-use App\Http\Controllers\Api\PaymentRequestController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
+use App\Http\Controllers\Web\PaymentRequestController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -12,15 +10,9 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [PaymentRequestController::class, 'index'])->name('dashboard');
-    Route::get('/payment-requests/create', [PaymentRequestController::class, 'create'])
-        ->name('payment-requests.create');
-    
+
     Route::post('/payment-requests', [PaymentRequestController::class, 'store'])
         ->name('payment-requests.store');
-    
-        Route::get('/payment-requests', [PaymentRequestController::class, 'list'])
-        ->name('payment-requests.index')
-        ->middleware('can:viewAny,App\Models\PaymentRequest');
 
     Route::patch('/payment-requests/{paymentRequest}/approve', [PaymentRequestController::class, 'approve'])
         ->name('payment-requests.approve');

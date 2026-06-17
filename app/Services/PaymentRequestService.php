@@ -6,12 +6,56 @@ use App\Enums\PaymentRequestStatus;
 use App\Exceptions\PaymentRequestConflictException;
 use App\Models\PaymentRequest;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class PaymentRequestService
 {
     public function __construct(
         private readonly ExchangeRateService $exchangeRateService,
     ) {
+    }
+
+    public function queryForUser(User $user, ?string $status = null): Builder
+    {
+        $query = PaymentRequest::query()
+            ->with(['user', 'reviewer'])
+            ->latest();
+
+        if ($user->isEmployee()) {
+            $query->where('user_id', $user->id);
+        }
+
+        if ($status !== null) {
+            $query->where('status', $status);
+        }
+
+        return $query;
+    }
+
+    public function listForUser(User $user, ?string $status = null): Collection
+    {
+        return $this->queryForUser($user, $status)->get();
+    }
+
+    /**
+     * @return array{pending: int, approved: int, rejected: int, expired: int}
+     */
+    public function statsForUser(User $user): array
+    {
+        $stats = $this->queryForUser($user)->clone()->selectRaw("
+            count(case when status = 'pending' then 1 end) as pending,
+            count(case when status = 'approved' then 1 end) as approved,
+            count(case when status = 'rejected' then 1 end) as rejected,
+            count(case when status = 'expired' then 1 end) as expired
+        ")->first();
+
+        return [
+            'pending' => (int) $stats->pending,
+            'approved' => (int) $stats->approved,
+            'rejected' => (int) $stats->rejected,
+            'expired' => (int) $stats->expired,
+        ];
     }
 
     public function create(User $user, array $data): PaymentRequest

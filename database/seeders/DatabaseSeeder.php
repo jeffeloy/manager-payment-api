@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Support\PassportKeyPermissions;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Passport\ClientRepository;
@@ -46,6 +47,7 @@ class DatabaseSeeder extends Seeder
     private function installPassportClient(): void
     {
         $this->command?->call('passport:keys', ['--force' => true]);
+        PassportKeyPermissions::fix();
 
         $clients = app(ClientRepository::class);
 

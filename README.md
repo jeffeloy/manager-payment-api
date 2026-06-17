@@ -67,6 +67,15 @@ docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/htm
 docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html laravelsail/php84-composer:latest php artisan test
 ```
 
+Com Sail (`compose.yaml`), suba com `docker compose up -d` e acesse a API em `http://localhost:8080/api`.
+
+As chaves Passport (`storage/oauth-*.key`) exigem permissões restritas (`600` na private, `640` na public). O app corrige isso automaticamente no boot; se ainda falhar no Insomnia, rode dentro do container:
+
+```bash
+docker compose exec api chmod 600 storage/oauth-private.key
+docker compose exec api chmod 640 storage/oauth-public.key
+```
+
 ## Usuários de teste (seed)
 
 Senha padrão para todos os usuários seedados, incluindo `finance`: `password`
@@ -89,6 +98,22 @@ Senha padrão para todos os usuários seedados, incluindo `finance`: `password`
 - **Taxa de câmbio:** buscada na criação via [ExchangeRate-API](https://api.exchangerate-api.com), armazenada de forma imutável (`exchange_rate`, `exchange_rate_source`, `exchange_rate_fetched_at`).
 - **Conversão:** `amount_eur = amount / exchange_rate`, onde a taxa representa unidades de moeda local por 1 EUR.
 - **Expiração:** comando agendado marca como `expired` solicitações `pending` com mais de 48 horas.
+
+## Arquitetura
+
+A aplicação expõe **duas camadas HTTP** que compartilham a mesma lógica de domínio (`PaymentRequestService`):
+
+| Camada | Rotas | Auth | Resposta | Uso |
+|--------|-------|------|----------|-----|
+| **API REST** | `/api/*` | Passport (`Authorization: Bearer`) | JSON | Entrega principal do teste (Postman, integrações) |
+| **UI demo** | `/dashboard`, `/payment-requests/*` | Session (login web) | Inertia + redirects | Demonstração em browser |
+
+Controllers:
+
+- `App\Http\Controllers\Api\PaymentRequestController` — somente `JsonResponse`
+- `App\Http\Controllers\Web\PaymentRequestController` — somente `Inertia::render` e redirects
+
+Autenticação web (`/login`, `/register`) permanece nos controllers Breeze em `App\Http\Controllers\Auth\*`. Autenticação API em `App\Http\Controllers\Api\AuthController`.
 
 ## Documentação da API
 
