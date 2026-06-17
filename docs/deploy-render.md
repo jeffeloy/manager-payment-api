@@ -51,7 +51,7 @@ O Render builda o [`Dockerfile`](../Dockerfile):
 
 1. `npm run build` (frontend)
 2. `composer install --no-dev`
-3. Start: [`scripts/render-start.sh`](../scripts/render-start.sh) → migrate, seed, `artisan serve`
+3. Start: [`scripts/render-start.sh`](../scripts/render-start.sh) → migrate, seed (only on empty DB), `artisan serve`
 
 **Health check:** `/up`
 
@@ -118,6 +118,7 @@ Cole em Render → `PASSPORT_PRIVATE_KEY` e `PASSPORT_PUBLIC_KEY` (quebras de li
 | 502 / timeout no cold start | Normal no free; aguarde ~1 min e recarregue |
 | API 401 após redeploy | Tokens antigos invalidados; faça login de novo |
 | APP_URL errado | Deve ser URL HTTPS exata do Render; `php artisan config:cache` no redeploy |
+| Seed duplicando a cada deploy | Corrigido: seed só roda se o banco estiver vazio. Para forçar: `RUN_DB_SEED=true` no Render (uma vez) |
 
 ---
 

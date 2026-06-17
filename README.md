@@ -143,6 +143,8 @@ Summary:
 3. Env vars: `APP_URL`, `DB_URL`, `APP_KEY` (see [`.env.render.example`](.env.render.example))
 4. Automatic deploy → URL `https://manager-payment-api.onrender.com`
 
+> **Database seeding on Render:** migrations run on every deploy; seeders run **only** when the database has no users (first deploy). To force a re-seed, set `RUN_DB_SEED=true` temporarily in Render env vars.
+
 ## Test users (seed)
 
 Default password for all seeded users, including `finance`: `password`

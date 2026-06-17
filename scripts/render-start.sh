@@ -33,8 +33,18 @@ chmod 640 storage/oauth-public.key 2>/dev/null || true
 echo "Running migrations..."
 php artisan migrate --force --no-interaction
 
-echo "Seeding database..."
-php artisan db:seed --force --no-interaction
+echo "Checking if database needs seeding..."
+USER_COUNT=$(php artisan tinker --execute='echo \App\Models\User::query()->count();' 2>/dev/null | tail -1 | tr -d '[:space:]')
+
+if [ "${RUN_DB_SEED:-false}" = "true" ]; then
+    echo "RUN_DB_SEED=true — running seeders..."
+    php artisan db:seed --force --no-interaction
+elif [ "${USER_COUNT:-0}" = "0" ]; then
+    echo "Empty database — running seeders..."
+    php artisan db:seed --force --no-interaction
+else
+    echo "Database already has data — skipping seeders."
+fi
 
 echo "Ensuring Passport personal access client..."
 php artisan passport:client --personal --name="Personal Access Client" --provider=users --no-interaction 2>/dev/null || true
