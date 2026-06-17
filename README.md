@@ -96,7 +96,7 @@ Base URL: `/api`
 
 ### POST `/register`
 
-Registra um funcionário (`employee`).
+Registra um funcionário (`employee`). O campo `currency` deve corresponder ao país selecionado (mapeamento em `config/countries.php`).
 
 **Body (JSON):**
 
@@ -106,9 +106,14 @@ Registra um funcionário (`employee`).
   "email": "ana@example.com",
   "password": "password123",
   "password_confirmation": "password123",
-  "country": "BR"
+  "country": "BR",
+  "currency": "BRL"
 }
 ```
+
+**Países suportados (country → currency):** PT, ES, FR, DE, IE, IT, NL, BE → EUR; GB → GBP; US → USD; BR → BRL; JP → JPY.
+
+**Erros:** `422` validação (inclui currency incompatível com country).
 
 **Resposta 201:**
 

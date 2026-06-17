@@ -23,9 +23,32 @@ class RegistrationTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'country' => 'BR',
+            'currency' => 'BRL',
         ]);
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'test@example.com',
+            'country' => 'BR',
+            'currency' => 'BRL',
+        ]);
+    }
+
+    public function test_registration_rejects_mismatched_currency_for_country(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'country' => 'BR',
+            'currency' => 'USD',
+        ]);
+
+        $response->assertSessionHasErrors('currency');
+        $this->assertGuest();
     }
 }

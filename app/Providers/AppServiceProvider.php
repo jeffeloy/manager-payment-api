@@ -3,11 +3,9 @@
 namespace App\Providers;
 
 use App\Contracts\ExchangeRateProviderInterface;
-use App\Contracts\CountryCurrencyProviderInterface;
 use App\Models\PaymentRequest;
 use App\Policies\PaymentRequestPolicy;
 use App\Services\ExchangerateApiProvider;
-use App\Services\RestCountriesCurrencyProvider;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
@@ -20,11 +18,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             ExchangeRateProviderInterface::class,
             ExchangerateApiProvider::class,
-        );
-
-        $this->app->bind(
-            CountryCurrencyProviderInterface::class,
-            RestCountriesCurrencyProvider::class,
         );
     }
 

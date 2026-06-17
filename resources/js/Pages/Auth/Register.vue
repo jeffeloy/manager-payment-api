@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import { Wallet, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -12,28 +13,32 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-const countries = [
-  { code: 'PT', name: 'Portugal' },
-  { code: 'ES', name: 'Spain' },
-  { code: 'FR', name: 'France' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'IE', name: 'Ireland' },
-  { code: 'IT', name: 'Italy' },
-  { code: 'NL', name: 'Netherlands' },
-  { code: 'BE', name: 'Belgium' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'US', name: 'United States' },
-  { code: 'BR', name: 'Brazil' },
-  { code: 'JP', name: 'Japan' },
-]
+interface CountryOption {
+  code: string
+  name: string
+  currency: string
+}
+
+const props = defineProps<{
+  countries: CountryOption[]
+}>()
 
 const form = useForm({
   name: '',
   email: '',
   country: '',
+  currency: '',
   password: '',
   password_confirmation: '',
 })
+
+watch(
+  () => form.country,
+  (countryCode) => {
+    const country = props.countries.find((item) => item.code === countryCode)
+    form.currency = country?.currency ?? ''
+  },
+)
 
 const submit = () => {
   form.post(route('register'), {
@@ -113,6 +118,23 @@ const submit = () => {
             </Select>
             <p v-if="form.errors.country" class="text-sm font-medium text-rose-600">
               {{ form.errors.country }}
+            </p>
+          </div>
+
+          <!-- Currency -->
+          <div class="space-y-2">
+            <Label for="currency">Currency</Label>
+            <Input
+              id="currency"
+              v-model="form.currency"
+              type="text"
+              readonly
+              tabindex="-1"
+              placeholder="Select a country first"
+              class="bg-slate-50"
+            />
+            <p v-if="form.errors.currency" class="text-sm font-medium text-rose-600">
+              {{ form.errors.currency }}
             </p>
           </div>
 

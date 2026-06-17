@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\CountryCurrencyService;
+use App\Rules\CurrencyMatchesCountry;
+use App\Support\CountryOptions;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,9 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Auth/Register');
+        return Inertia::render('Auth/Register', [
+            'countries' => CountryOptions::forRegistration(),
+        ]);
     }
 
     /**
@@ -31,23 +34,33 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request, CountryCurrencyService $countryCurrencyService): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $request->merge([
+            'country' => strtoupper((string) $request->country),
+            'currency' => strtoupper((string) $request->currency),
+        ]);
+
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'country' => 'required|string|size:2',
+            'country' => 'required|string|size:2|in:'.implode(',', array_keys(config('countries'))),
+            'currency' => [
+                'required',
+                'string',
+                'size:3',
+                'regex:/^[A-Z]{3}$/',
+                new CurrencyMatchesCountry($request->input('country')),
+            ],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $currency = $countryCurrencyService->getCurrencyForCountry($request->country);
-
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'country' => $request->country,
-            'currency' => $currency,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'country' => strtoupper($validated['country']),
+            'currency' => strtoupper($validated['currency']),
             'role' => UserRole::Employee,
         ]);
 

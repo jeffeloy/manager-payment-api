@@ -4,10 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
-use App\Services\CountryCurrencyService;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,16 +15,18 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function register(RegisterRequest $request, CountryCurrencyService $countryCurrencyService): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $currency = $countryCurrencyService->getCurrencyForCountry($validated['country']);
 
-        $user = User::query()->create(array_merge($validated, [
+        $user = User::query()->create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'country' => $validated['country'],
+            'currency' => $validated['currency'],
             'role' => UserRole::Employee,
-            'currency' => $currency,
-        ]));
+        ]);
 
         $tokenResult = $user->createToken('auth-token');
 
