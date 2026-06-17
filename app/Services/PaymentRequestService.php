@@ -43,7 +43,10 @@ class PaymentRequestService
      */
     public function statsForUser(User $user): array
     {
-        $stats = $this->queryForUser($user)->clone()->selectRaw("
+        $stats = $this->queryForUser($user)
+            ->clone()
+            ->reorder()
+            ->selectRaw("
             count(case when status = 'pending' then 1 end) as pending,
             count(case when status = 'approved' then 1 end) as approved,
             count(case when status = 'rejected' then 1 end) as rejected,
