@@ -1,3 +1,16 @@
+FROM composer:2 AS vendor
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --prefer-dist \
+    --no-scripts \
+    --ignore-platform-reqs \
+    --optimize-autoloader
+
 FROM node:24-alpine AS frontend
 
 WORKDIR /app
@@ -6,7 +19,9 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
 COPY . .
-RUN npm run build
+COPY --from=vendor /app/vendor ./vendor
+
+RUN npm run build:production
 
 FROM php:8.4-cli-bookworm
 
@@ -35,6 +50,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 COPY . .
 COPY --from=frontend /app/public/build ./public/build
+COPY --from=vendor /app/vendor ./vendor
 
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader \
     && mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
