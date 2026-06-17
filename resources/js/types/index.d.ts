@@ -5,6 +5,8 @@ export interface User {
     name: string;
     email: string;
     email_verified_at?: string;
+    role: 'employee' | 'finance';
+    currency: string;
 }
 
 export type PageProps<

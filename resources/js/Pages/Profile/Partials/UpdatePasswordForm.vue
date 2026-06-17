@@ -85,7 +85,7 @@ const updatePassword = () => {
             </div>
 
             <div class="flex items-center gap-4">
-                <Button :disabled="form.processing">
+                <Button :disabled="form.processing" class="bg-emerald-500 text-white">
                     <Loader2 v-if="form.processing" class="mr-2 h-4 w-4 animate-spin" />
                     Save
                 </Button>

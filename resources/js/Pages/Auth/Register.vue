@@ -151,7 +151,7 @@ const submit = () => {
           <!-- Submit -->
           <Button
             type="submit"
-            class="w-full"
+            class="w-full rounded-lg border border-slate-200 bg-slate-950 text-white hover:bg-slate-900 hover:text-slate-50"
             :class="{ 'opacity-70': form.processing }"
             :disabled="form.processing"
           >
