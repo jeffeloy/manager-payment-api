@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import { Loader2 } from 'lucide-vue-next'; // Importe este ícone se não tiver
+import { Loader2 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

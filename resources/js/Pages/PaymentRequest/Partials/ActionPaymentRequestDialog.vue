@@ -60,39 +60,39 @@ function performAction(): void {
                 <DialogTitle>
                     {{
                         actionType === 'approve'
-                            ? 'Aprovar Solicitação'
-                            : 'Rejeitar Solicitação'
+                            ? 'Approve Request'
+                            : 'Reject Request'
                     }}
                 </DialogTitle>
             </DialogHeader>
 
             <form @submit.prevent="performAction" class="space-y-4">
                 <p class="text-sm text-slate-500">
-                    Tem certeza que deseja
-                    {{ actionType === 'approve' ? 'aprovar' : 'rejeitar' }} a solicitação de
-                    <strong>{{ request?.user?.name }}</strong>?
+                    Are you sure you want to
+                    {{ actionType === 'approve' ? 'approve' : 'reject' }}
+                    <strong>{{ request?.user?.name }}</strong>'s request?
                 </p>
 
                 <div v-if="actionType === 'reject'" class="space-y-2">
-                    <Label for="rejection_reason">Motivo da Rejeição</Label>
+                    <Label for="rejection_reason">Rejection Reason</Label>
                     <Textarea
                         id="rejection_reason"
                         v-model="form.rejection_reason"
                         required
-                        placeholder="Explique o porquê da rejeição..."
+                        placeholder="Explain why this request is being rejected..."
                     />
                 </div>
 
                 <DialogFooter>
                     <Button variant="ghost" type="button" @click="open = false">
-                        Cancelar
+                        Cancel
                     </Button>
                     <Button
                         :variant="actionType === 'approve' ? 'default' : 'destructive'"
                         type="submit"
                         :disabled="form.processing"
                     >
-                        Confirmar
+                        Confirm
                     </Button>
                 </DialogFooter>
             </form>

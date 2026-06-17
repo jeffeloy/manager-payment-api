@@ -76,7 +76,7 @@ function submitPaymentRequest(): void {
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-2">
-                        <Label for="amount">Valor</Label>
+                        <Label for="amount">Amount</Label>
                         <input
                             id="amount"
                             ref="inputRef"
@@ -100,7 +100,7 @@ function submitPaymentRequest(): void {
                     class="w-full bg-slate-900 text-white hover:bg-slate-800"
                     :disabled="form.processing"
                 >
-                    Enviar Solicitação
+                    Submit Request
                 </Button>
             </form>
         </DialogContent>

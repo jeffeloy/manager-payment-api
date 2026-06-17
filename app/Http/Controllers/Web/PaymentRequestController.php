@@ -53,7 +53,7 @@ class PaymentRequestController extends Controller
             ]);
         }
 
-        return to_route('dashboard')->with('success', 'Solicitação criada com sucesso!');
+        return to_route('dashboard')->with('success', 'Payment request created successfully.');
     }
 
     public function approve(Request $request, PaymentRequest $paymentRequest): RedirectResponse
@@ -71,7 +71,7 @@ class PaymentRequestController extends Controller
             ]);
         }
 
-        return to_route('dashboard')->with('success', 'Solicitação aprovada com sucesso!');
+        return to_route('dashboard')->with('success', 'Payment request approved successfully.');
     }
 
     public function reject(RejectPaymentRequestRequest $request, PaymentRequest $paymentRequest): RedirectResponse
@@ -90,6 +90,6 @@ class PaymentRequestController extends Controller
             ]);
         }
 
-        return to_route('dashboard')->with('success', 'Solicitação rejeitada com sucesso!');
+        return to_route('dashboard')->with('success', 'Payment request rejected successfully.');
     }
 }

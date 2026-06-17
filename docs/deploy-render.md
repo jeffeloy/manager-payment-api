@@ -33,8 +33,8 @@ Em **Environment** do serviço:
 
 | Variável | Valor |
 |----------|--------|
-| `APP_KEY` | Generate (Render) ou `php artisan key:generate --show` local |
-| `APP_URL` | `https://SEU-SERVICO.onrender.com` (URL do Render após criar) |
+| `APP_KEY` | `php artisan key:generate --show` local → colar no Render (deve começar com `base64:`) |
+| `APP_URL` | `https://manager-payment-api.onrender.com` |
 | `DB_CONNECTION` | `pgsql` |
 | `DB_URL` | Connection string do Neon (com `?sslmode=require`) |
 | `APP_ENV` | `production` |

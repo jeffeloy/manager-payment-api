@@ -1,20 +1,39 @@
-# manager Payment API
+# Manager Payment API
 
-API REST em Laravel 12 para gerenciamento de solicitações de pagamento multimoeda. Usuários autenticados via Laravel Passport podem enviar pagamentos em moeda local, consultar taxas de câmbio em tempo real e encaminhar solicitações para aprovação pela equipe financeira.
+Laravel 12 REST API for managing multi-currency payment requests. Users authenticated via Laravel Passport can submit payments in their local currency, fetch real-time exchange rates, and forward requests for approval by the finance team.
 
-## Requisitos
+## Live demo
+
+**Application:** [https://manager-payment-api.onrender.com](https://manager-payment-api.onrender.com)
+
+| | URL |
+|---|-----|
+| **UI (login)** | [https://manager-payment-api.onrender.com/login](https://manager-payment-api.onrender.com/login) |
+| **API base** | [https://manager-payment-api.onrender.com/api](https://manager-payment-api.onrender.com/api) |
+| **Health** | [https://manager-payment-api.onrender.com/up](https://manager-payment-api.onrender.com/up) |
+
+> **Render free tier:** after ~15 minutes of inactivity, the first visit may take ~1 minute (cold start).
+
+| Role | Email | Password |
+|------|-------|----------|
+| Employee | `ana.silva@manager.test` | `password` |
+| Finance | `finance.admin@manager.test` | `password` |
+
+API documentation: see the [API Documentation](#api-documentation) section below.
+
+## Requirements
 
 - PHP 8.2+
 - Composer 2.x
-- SQLite (padrão) ou MySQL
-- Extensões PHP: `bcmath`, `curl`, `dom`, `mbstring`, `sqlite3`, `xml`, `zip`
+- SQLite (default) or MySQL
+- PHP extensions: `bcmath`, `curl`, `dom`, `mbstring`, `sqlite3`, `xml`, `zip`
 
-> Se preferir evitar dependências locais de PHP, use Docker (veja seção Docker abaixo).
+> To avoid local PHP dependencies, use Docker (see the Docker section below).
 
-## Configuração local
+## Local setup
 
 ```bash
-git clone <seu-repositorio> manager-payment-api
+git clone <your-repository> manager-payment-api
 cd manager-payment-api
 
 composer install
@@ -27,11 +46,11 @@ php artisan migrate --seed
 php artisan serve
 ```
 
-A API ficará disponível em `http://localhost:8000/api`.
+The API will be available at `http://localhost:8000/api`.
 
-### MySQL (opcional)
+### MySQL (optional)
 
-No `.env`:
+In `.env`:
 
 ```env
 DB_CONNECTION=mysql
@@ -42,23 +61,23 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-### Scheduler (expiração automática)
+### Scheduler (automatic expiration)
 
-Solicitações pendentes por mais de 48 horas são expiradas pelo comando `payment-requests:expire`, agendado de hora em hora.
+Requests pending for more than 48 hours are expired by the `payment-requests:expire` command, scheduled to run every hour.
 
-Adicione ao cron:
+Add to cron:
 
 ```bash
-* * * * * cd /caminho/para/manager-payment-api && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /path/to/manager-payment-api && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Execução manual:
+Manual execution:
 
 ```bash
 php artisan payment-requests:expire
 ```
 
-### Docker (alternativa)
+### Docker (alternative)
 
 ```bash
 docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html laravelsail/php84-composer:latest composer install
@@ -67,88 +86,69 @@ docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/htm
 docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html laravelsail/php84-composer:latest php artisan test
 ```
 
-Com Sail (`compose.yaml`), suba com `docker compose up -d --build` e acesse:
+With Sail (`compose.yaml`), start with `docker compose up -d --build` and access:
 
 - **API:** `http://localhost:8080/api`
-- **UI demo:** `http://localhost:8080/login`
+- **Demo UI:** `http://localhost:8080/login`
 
-Na primeira subida, o container compila automaticamente os assets do frontend (`npm ci` + `npm run build`) se `public/build/manifest.json` ainda não existir. Não é necessário entrar no container para rodar `npm run dev`.
+On first startup, the container automatically builds frontend assets (`npm ci` + `npm run build`) if `public/build/manifest.json` does not exist yet. You do not need to enter the container to run `npm run dev`.
 
-Para desenvolvimento com hot reload (opcional):
+For development with hot reload (optional):
 
 ```bash
 docker compose exec api npm run dev
 ```
 
-A UI passa a usar o Vite dev server em `http://localhost:5173`. Para pular o build automático na subida: `SKIP_FRONTEND_BUILD=1 docker compose up -d`.
+The UI will use the Vite dev server at `http://localhost:5173`. To skip the automatic build on startup: `SKIP_FRONTEND_BUILD=1 docker compose up -d`.
 
-Rebuild manual dos assets:
+Manual asset rebuild:
 
 ```bash
 docker compose exec api npm run build
 ```
 
-As chaves Passport (`storage/oauth-*.key`) exigem permissões restritas (`600` na private, `640` na public). O app corrige isso automaticamente no boot; se ainda falhar no Insomnia, rode dentro do container:
+Passport keys (`storage/oauth-*.key`) require restricted permissions (`600` for private, `640` for public). The app fixes this automatically on boot; if it still fails in Insomnia, run inside the container:
 
 ```bash
 docker compose exec api chmod 600 storage/oauth-private.key
 docker compose exec api chmod 640 storage/oauth-public.key
 ```
 
-### Deploy em produção (Oracle Cloud Always Free)
+### Production deploy (Oracle Cloud Always Free)
 
-Guia completo: [docs/deploy-oracle.md](docs/deploy-oracle.md)
+Full guide: [docs/deploy-oracle.md](docs/deploy-oracle.md)
 
-Resumo na VM:
+Summary on the VM:
 
 ```bash
-git clone git@github.com:SEU_USUARIO/manager-payment-api.git
+git clone git@github.com:YOUR_USER/manager-payment-api.git
 cd manager-payment-api
 cp .env.production.example .env
-# Edite APP_URL=http://SEU_IP:8080 e DB_PASSWORD
+# Edit APP_URL=http://YOUR_IP:8080 and DB_PASSWORD
 bash scripts/oracle-bootstrap.sh
 bash scripts/oracle-deploy.sh
 bash scripts/oracle-validate.sh
 ```
 
-HTTPS (Fase 2): `sudo bash scripts/oracle-setup-nginx.sh demo.seudominio.com`
+HTTPS (Phase 2): `sudo bash scripts/oracle-setup-nginx.sh demo.yourdomain.com`
 
-### Deploy em produção (Render + Neon — recomendado se Oracle sem capacidade)
+### Production deploy (Render + Neon — recommended if Oracle has no capacity)
 
-Guia completo: [docs/deploy-render.md](docs/deploy-render.md)
+Full guide: [docs/deploy-render.md](docs/deploy-render.md)
 
-Resumo:
+Summary:
 
-1. **Neon** — crie projeto Postgres e copie `DB_URL`
-2. **Render** — New Blueprint → repo GitHub → [`render.yaml`](render.yaml)
-3. Env vars: `APP_URL`, `DB_URL`, `APP_KEY` (ver [`.env.render.example`](.env.render.example))
-4. Deploy automático → URL `https://seu-servico.onrender.com`
+1. **Neon** — create a Postgres project and copy `DB_URL`
+2. **Render** — New Blueprint → GitHub repo → [`render.yaml`](render.yaml)
+3. Env vars: `APP_URL`, `DB_URL`, `APP_KEY` (see [`.env.render.example`](.env.render.example))
+4. Automatic deploy → URL `https://manager-payment-api.onrender.com`
 
-## Demo ao vivo
+## Test users (seed)
 
-> Substitua pela URL após deploy (**Render** ou **Oracle**).
+Default password for all seeded users, including `finance`: `password`
 
-| | URL |
-|---|-----|
-| **UI (login)** | `https://manager-payment-api.onrender.com/login` |
-| **API base** | `https://manager-payment-api.onrender.com/api` |
-| **Health** | `https://manager-payment-api.onrender.com/up` |
-
-Render free: após ~15 min sem uso, 1ª visita pode levar ~1 min (cold start).
-
-| Perfil | Email | Senha |
-|--------|-------|-------|
-| Employee | `ana.silva@manager.test` | `password` |
-| Finance | `finance.admin@manager.test` | `password` |
-
-Documentação da API: ver seção [Documentação da API](#documentação-da-api) abaixo.
-
-## Usuários de teste (seed)
-
-Senha padrão para todos os usuários seedados, incluindo `finance`: `password`
-
-| Nome | Email | Role | País | Moeda |
-|------|-------|------|------|-------|
+| Name | Email | Role | Country | Currency |
+|------|-------|------|---------|----------|
 | Ana Silva | ana.silva@manager.test | employee | BR | BRL |
 | John Smith | john.smith@manager.test | employee | US | USD |
 | Emma Wilson | emma.wilson@manager.test | employee | GB | GBP |
@@ -158,56 +158,56 @@ Senha padrão para todos os usuários seedados, incluindo `finance`: `password`
 | Finance Admin | finance.admin@manager.test | finance | PT | EUR |
 | Finance Reviewer | finance.reviewer@manager.test | finance | PT | EUR |
 
-## Decisões técnicas
+## Technical decisions
 
-- **Autenticação:** Laravel Passport com Personal Access Tokens (`Bearer`).
-- **Papéis:** `employee` cria/consulta suas solicitações; `finance` visualiza todas e aprova/rejeita pendentes.
-- **Taxa de câmbio:** buscada na criação via [ExchangeRate-API](https://api.exchangerate-api.com), armazenada de forma imutável (`exchange_rate`, `exchange_rate_source`, `exchange_rate_fetched_at`).
-- **Conversão:** `amount_eur = amount / exchange_rate`, onde a taxa representa unidades de moeda local por 1 EUR.
-- **Expiração:** comando agendado marca como `expired` solicitações `pending` com mais de 48 horas.
+- **Authentication:** Laravel Passport with Personal Access Tokens (`Bearer`).
+- **Roles:** `employee` creates/views their own requests; `finance` views all and approves/rejects pending ones.
+- **Exchange rate:** fetched on creation via [ExchangeRate-API](https://api.exchangerate-api.com), stored immutably (`exchange_rate`, `exchange_rate_source`, `exchange_rate_fetched_at`).
+- **Conversion:** `amount_eur = amount / exchange_rate`, where the rate represents units of local currency per 1 EUR.
+- **Expiration:** scheduled command marks `pending` requests older than 48 hours as `expired`.
 
-## Arquitetura
+## Architecture
 
-A aplicação expõe **duas camadas HTTP** que compartilham a mesma lógica de domínio (`PaymentRequestService`):
+The application exposes **two HTTP layers** that share the same domain logic (`PaymentRequestService`):
 
-| Camada | Rotas | Auth | Resposta | Uso |
-|--------|-------|------|----------|-----|
-| **API REST** | `/api/*` | Passport (`Authorization: Bearer`) | JSON | Entrega principal do teste (Postman, integrações) |
-| **UI demo** | `/dashboard`, `/payment-requests/*` | Session (login web) | Inertia + redirects | Demonstração em browser |
+| Layer | Routes | Auth | Response | Purpose |
+|-------|--------|------|----------|---------|
+| **REST API** | `/api/*` | Passport (`Authorization: Bearer`) | JSON | Primary deliverable (Postman, integrations) |
+| **Demo UI** | `/dashboard`, `/payment-requests/*` | Session (web login) | Inertia + redirects | Browser demonstration |
 
 Controllers:
 
-- `App\Http\Controllers\Api\PaymentRequestController` — somente `JsonResponse`
-- `App\Http\Controllers\Web\PaymentRequestController` — somente `Inertia::render` e redirects
+- `App\Http\Controllers\Api\PaymentRequestController` — JSON responses only
+- `App\Http\Controllers\Web\PaymentRequestController` — `Inertia::render` and redirects only
 
-Autenticação web (`/login`, `/register`) permanece nos controllers Breeze em `App\Http\Controllers\Auth\*`. Autenticação API em `App\Http\Controllers\Api\AuthController`.
+Web authentication (`/login`, `/register`) remains in Breeze controllers under `App\Http\Controllers\Auth\*`. API authentication in `App\Http\Controllers\Api\AuthController`.
 
-## Documentação da API
+## API Documentation
 
 Base URL: `/api`
 
-### Autenticação
+### Authentication
 
-Rotas protegidas exigem o header:
+Protected routes require the header:
 
 ```
 Authorization: Bearer {access_token}
 ```
 
-O token é retornado em `POST /register` ou `POST /login` no campo `access_token`. Rotas públicas: `/register`, `/login`. Demais rotas listadas abaixo requerem autenticação.
+The token is returned by `POST /register` or `POST /login` in the `access_token` field. Public routes: `/register`, `/login`. All other routes listed below require authentication.
 
-### Formato de erros
+### Error format
 
-| Status | Quando |
-|--------|--------|
-| `401` | Token ausente, inválido ou expirado; credenciais de login inválidas |
-| `403` | Usuário autenticado sem permissão (ex.: employee tentando aprovar) |
-| `404` | Recurso não encontrado |
-| `409` | Conflito de estado (ex.: aprovar solicitação que não está `pending`) |
-| `422` | Falha de validação |
-| `503` | Taxa de câmbio indisponível na criação de solicitação |
+| Status | When |
+|--------|------|
+| `401` | Missing, invalid, or expired token; invalid login credentials |
+| `403` | Authenticated user lacks permission (e.g. employee trying to approve) |
+| `404` | Resource not found |
+| `409` | State conflict (e.g. approving a request that is not `pending`) |
+| `422` | Validation failure |
+| `503` | Exchange rate unavailable when creating a request |
 
-**Exemplo 422 (validação):**
+**422 example (validation):**
 
 ```json
 {
@@ -220,7 +220,7 @@ O token é retornado em `POST /register` ou `POST /login` no campo `access_token
 }
 ```
 
-**Exemplo 401 (credenciais inválidas no login):**
+**401 example (invalid login credentials):**
 
 ```json
 {
@@ -232,22 +232,22 @@ O token é retornado em `POST /register` ou `POST /login` no campo `access_token
 
 ### POST `/register`
 
-Registra um funcionário (`employee`). A `currency` deve corresponder ao país (`config/countries.php`).
+Registers an employee (`employee`). The `currency` must match the country (`config/countries.php`).
 
-| Parâmetro | In | Tipo | Obrigatório | Descrição |
-|-----------|-----|------|-------------|-----------|
-| `name` | body | string | sim | Nome completo (max 255) |
-| `email` | body | string | sim | E-mail único |
-| `password` | body | string | sim | Mínimo 8 caracteres |
-| `password_confirmation` | body | string | sim | Deve coincidir com `password` |
-| `country` | body | string | sim | ISO 3166-1 alpha-2 (ex.: `BR`) |
-| `currency` | body | string | sim | ISO 4217 (ex.: `BRL`); deve corresponder ao país |
+| Parameter | In | Type | Required | Description |
+|-----------|-----|------|----------|-------------|
+| `name` | body | string | yes | Full name (max 255) |
+| `email` | body | string | yes | Unique email |
+| `password` | body | string | yes | Minimum 8 characters |
+| `password_confirmation` | body | string | yes | Must match `password` |
+| `country` | body | string | yes | ISO 3166-1 alpha-2 (e.g. `BR`) |
+| `currency` | body | string | yes | ISO 4217 (e.g. `BRL`); must match country |
 
-**Países suportados (country → currency):** PT, ES, FR, DE, IE, IT, NL, BE → EUR; GB → GBP; US → USD; BR → BRL; JP → JPY.
+**Supported countries (country → currency):** PT, ES, FR, DE, IE, IT, NL, BE → EUR; GB → GBP; US → USD; BR → BRL; JP → JPY.
 
-**Auth:** não
+**Auth:** no
 
-**Resposta 201:**
+**201 response:**
 
 ```json
 {
@@ -267,20 +267,20 @@ Registra um funcionário (`employee`). A `currency` deve corresponder ao país (
 }
 ```
 
-**Erros:** `422` (validação, incluindo currency incompatível com country).
+**Errors:** `422` (validation, including currency incompatible with country).
 
 ---
 
 ### POST `/login`
 
-| Parâmetro | In | Tipo | Obrigatório | Descrição |
-|-----------|-----|------|-------------|-----------|
-| `email` | body | string | sim | E-mail cadastrado |
-| `password` | body | string | sim | Senha do usuário |
+| Parameter | In | Type | Required | Description |
+|-----------|-----|------|----------|-------------|
+| `email` | body | string | yes | Registered email |
+| `password` | body | string | yes | User password |
 
-**Auth:** não
+**Auth:** no
 
-**Resposta 200:**
+**200 response:**
 
 ```json
 {
@@ -300,21 +300,21 @@ Registra um funcionário (`employee`). A `currency` deve corresponder ao país (
 }
 ```
 
-**Erros:** `401` credenciais inválidas; `422` validação.
+**Errors:** `401` invalid credentials; `422` validation.
 
 ---
 
 ### POST `/logout`
 
-Revoga o token de acesso atual.
+Revokes the current access token.
 
-| Parâmetro | In | Tipo | Obrigatório | Descrição |
-|-----------|-----|------|-------------|-----------|
-| — | — | — | — | Sem body |
+| Parameter | In | Type | Required | Description |
+|-----------|-----|------|----------|-------------|
+| — | — | — | — | No body |
 
-**Auth:** sim
+**Auth:** yes
 
-**Resposta 200:**
+**200 response:**
 
 ```json
 {
@@ -322,21 +322,21 @@ Revoga o token de acesso atual.
 }
 ```
 
-**Erros:** `401` sem token válido.
+**Errors:** `401` without a valid token.
 
 ---
 
 ### GET `/user`
 
-Retorna o perfil do usuário autenticado.
+Returns the authenticated user's profile.
 
-| Parâmetro | In | Tipo | Obrigatório | Descrição |
-|-----------|-----|------|-------------|-----------|
-| — | — | — | — | Sem parâmetros |
+| Parameter | In | Type | Required | Description |
+|-----------|-----|------|----------|-------------|
+| — | — | — | — | No parameters |
 
-**Auth:** sim
+**Auth:** yes
 
-**Resposta 200:**
+**200 response:**
 
 ```json
 {
@@ -353,23 +353,23 @@ Retorna o perfil do usuário autenticado.
 }
 ```
 
-**Erros:** `401` sem token válido.
+**Errors:** `401` without a valid token.
 
 ---
 
 ### POST `/payment-requests`
 
-Cria uma solicitação de pagamento. Apenas `employee`. A `currency` deve ser igual à moeda local do usuário autenticado. A taxa de câmbio é obtida na criação e armazenada de forma imutável.
+Creates a payment request. `employee` only. The `currency` must match the authenticated user's local currency. The exchange rate is fetched on creation and stored immutably.
 
-| Parâmetro | In | Tipo | Obrigatório | Descrição |
-|-----------|-----|------|-------------|-----------|
-| `title` | body | string | sim | Descrição (max 255) |
-| `amount` | body | number | sim | Valor na moeda local (> 0) |
-| `currency` | body | string | sim | ISO 4217; deve coincidir com a moeda do usuário |
+| Parameter | In | Type | Required | Description |
+|-----------|-----|------|----------|-------------|
+| `title` | body | string | yes | Description (max 255) |
+| `amount` | body | number | yes | Amount in local currency (> 0) |
+| `currency` | body | string | yes | ISO 4217; must match the user's currency |
 
-**Auth:** sim (role `employee`)
+**Auth:** yes (role `employee`)
 
-**Resposta 201:**
+**201 response:**
 
 ```json
 {
@@ -403,23 +403,23 @@ Cria uma solicitação de pagamento. Apenas `employee`. A `currency` deve ser ig
 }
 ```
 
-**Erros:** `403` (finance não pode criar), `422` (validação), `503` (taxa de câmbio indisponível).
+**Errors:** `403` (finance cannot create), `422` (validation), `503` (exchange rate unavailable).
 
 ---
 
 ### GET `/payment-requests`
 
-Lista solicitações. Employees veem apenas as próprias; finance vê todas.
+Lists payment requests. Employees see only their own; finance sees all.
 
-| Parâmetro | In | Tipo | Obrigatório | Descrição |
-|-----------|-----|------|-------------|-----------|
-| `status` | query | string | não | Filtro: `pending`, `approved`, `rejected`, `expired` |
+| Parameter | In | Type | Required | Description |
+|-----------|-----|------|----------|-------------|
+| `status` | query | string | no | Filter: `pending`, `approved`, `rejected`, `expired` |
 
-**Auth:** sim
+**Auth:** yes
 
-**Exemplo:** `GET /api/payment-requests?status=pending`
+**Example:** `GET /api/payment-requests?status=pending`
 
-**Resposta 200:**
+**200 response:**
 
 ```json
 {
@@ -454,37 +454,37 @@ Lista solicitações. Employees veem apenas as próprias; finance vê todas.
 }
 ```
 
-**Erros:** `401`, `422` (status inválido).
+**Errors:** `401`, `422` (invalid status).
 
 ---
 
 ### GET `/payment-requests/{id}`
 
-Detalhe de uma solicitação. Employee acessa apenas as próprias; finance acessa qualquer uma.
+Payment request detail. Employees can access only their own; finance can access any.
 
-| Parâmetro | In | Tipo | Obrigatório | Descrição |
-|-----------|-----|------|-------------|-----------|
-| `id` | path | integer | sim | ID da solicitação |
+| Parameter | In | Type | Required | Description |
+|-----------|-----|------|----------|-------------|
+| `id` | path | integer | yes | Request ID |
 
-**Auth:** sim
+**Auth:** yes
 
-**Resposta 200:** mesmo formato de um item em `GET /payment-requests` (objeto em `data`).
+**200 response:** same format as a single item in `GET /payment-requests` (object in `data`).
 
-**Erros:** `401`, `403` (employee tentando ver solicitação de outro), `404` (ID inexistente).
+**Errors:** `401`, `403` (employee trying to view another user's request), `404` (non-existent ID).
 
 ---
 
 ### PATCH `/payment-requests/{id}/approve`
 
-Aprova uma solicitação `pending`. Apenas `finance`.
+Approves a `pending` request. `finance` only.
 
-| Parâmetro | In | Tipo | Obrigatório | Descrição |
-|-----------|-----|------|-------------|-----------|
-| `id` | path | integer | sim | ID da solicitação |
+| Parameter | In | Type | Required | Description |
+|-----------|-----|------|----------|-------------|
+| `id` | path | integer | yes | Request ID |
 
-**Auth:** sim (role `finance`)
+**Auth:** yes (role `finance`)
 
-**Resposta 200:**
+**200 response:**
 
 ```json
 {
@@ -507,22 +507,22 @@ Aprova uma solicitação `pending`. Apenas `finance`.
 }
 ```
 
-**Erros:** `403` (employee, ou solicitação que não está `pending`), `404`.
+**Errors:** `403` (employee, or request not `pending`), `404`.
 
 ---
 
 ### PATCH `/payment-requests/{id}/reject`
 
-Rejeita uma solicitação `pending`. Apenas `finance`.
+Rejects a `pending` request. `finance` only.
 
-| Parâmetro | In | Tipo | Obrigatório | Descrição |
-|-----------|-----|------|-------------|-----------|
-| `id` | path | integer | sim | ID da solicitação |
-| `rejection_reason` | body | string | sim | Motivo da rejeição (max 1000) |
+| Parameter | In | Type | Required | Description |
+|-----------|-----|------|----------|-------------|
+| `id` | path | integer | yes | Request ID |
+| `rejection_reason` | body | string | yes | Rejection reason (max 1000) |
 
-**Auth:** sim (role `finance`)
+**Auth:** yes (role `finance`)
 
-**Resposta 200:**
+**200 response:**
 
 ```json
 {
@@ -545,45 +545,45 @@ Rejeita uma solicitação `pending`. Apenas `finance`.
 }
 ```
 
-**Erros:** `403`, `409`, `422` (`rejection_reason` ausente), `404`.
+**Errors:** `403`, `409`, `422` (missing `rejection_reason`), `404`.
 
 ---
 
-## Testes
+## Tests
 
 ```bash
 php artisan test
 ```
 
-### Testes unitários (funcionalidades críticas)
+### Unit tests (critical functionality)
 
-| Área | Arquivo | Cobertura |
-|------|---------|-----------|
-| Serviço de solicitações | `tests/Unit/PaymentRequestServiceTest.php` | Criar, aprovar, rejeitar, expirar, conflito 409, escopo employee/finance, stats |
-| Provedor de câmbio | `tests/Unit/ExchangerateApiProviderTest.php` | Fetch, provider indisponível, moeda ausente |
+| Area | File | Coverage |
+|------|------|----------|
+| Payment request service | `tests/Unit/PaymentRequestServiceTest.php` | Create, approve, reject, expire, 409 conflict, employee/finance scope, stats |
+| Exchange rate provider | `tests/Unit/ExchangerateApiProviderTest.php` | Fetch, unavailable provider, missing currency |
 
-### Testes de integração da API
+### API integration tests
 
-| Endpoint | Arquivo | Cenários |
-|----------|---------|----------|
-| `POST /register` | `tests/Feature/AuthTest.php` | Registro com token; currency/country inválidos |
-| `POST /login` | `tests/Feature/AuthTest.php` | Login; credenciais inválidas (401) |
-| `POST /logout` | `tests/Feature/AuthTest.php` | Logout com token |
-| `GET /user` | `tests/Feature/AuthTest.php` | Perfil autenticado; 401 sem token |
-| `POST /payment-requests` | `tests/Feature/PaymentRequestTest.php` | Criar com taxa; currency inválida; 503; finance 403 |
-| `GET /payment-requests` | `tests/Feature/PaymentRequestTest.php` | Escopo employee; filtro finance |
-| `GET /payment-requests/{id}` | `tests/Feature/PaymentRequestTest.php` | Show próprio; 403 cross-user |
-| `PATCH .../approve` | `tests/Feature/PaymentRequestTest.php` | Aprovar; employee 403; 403 non-pending |
-| `PATCH .../reject` | `tests/Feature/PaymentRequestTest.php` | Rejeitar; 422 sem motivo |
+| Endpoint | File | Scenarios |
+|----------|------|-----------|
+| `POST /register` | `tests/Feature/AuthTest.php` | Registration with token; invalid currency/country |
+| `POST /login` | `tests/Feature/AuthTest.php` | Login; invalid credentials (401) |
+| `POST /logout` | `tests/Feature/AuthTest.php` | Logout with token |
+| `GET /user` | `tests/Feature/AuthTest.php` | Authenticated profile; 401 without token |
+| `POST /payment-requests` | `tests/Feature/PaymentRequestTest.php` | Create with rate; invalid currency; 503; finance 403 |
+| `GET /payment-requests` | `tests/Feature/PaymentRequestTest.php` | Employee scope; finance filter |
+| `GET /payment-requests/{id}` | `tests/Feature/PaymentRequestTest.php` | Own show; 403 cross-user |
+| `PATCH .../approve` | `tests/Feature/PaymentRequestTest.php` | Approve; employee 403; 403 non-pending |
+| `PATCH .../reject` | `tests/Feature/PaymentRequestTest.php` | Reject; 422 without reason |
 
-### Outros
+### Other
 
-| Área | Arquivo |
-|------|---------|
-| Expiração automática (> 48h) | `tests/Feature/ExpirePendingPaymentRequestsTest.php` |
-| UI demo (Inertia) | `tests/Feature/Web/PaymentRequestWebTest.php` |
+| Area | File |
+|------|------|
+| Automatic expiration (> 48h) | `tests/Feature/ExpirePendingPaymentRequestsTest.php` |
+| Demo UI (Inertia) | `tests/Feature/Web/PaymentRequestWebTest.php` |
 
-## Estrutura relevante
+## Relevant structure
 
 ```
 app/

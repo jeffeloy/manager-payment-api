@@ -4,8 +4,9 @@ set -euo pipefail
 
 cd /var/www/html
 
-if [ -z "${APP_KEY:-}" ]; then
-    echo "APP_KEY is required. Set it in Render environment variables."
+if ! echo "${APP_KEY}" | grep -q '^base64:'; then
+    echo "APP_KEY inválida. Gere com: php artisan key:generate --show"
+    echo "Deve começar com base64: (ex.: base64:AbCd...=)"
     exit 1
 fi
 
