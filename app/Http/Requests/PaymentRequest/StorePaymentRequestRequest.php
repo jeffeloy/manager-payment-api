@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\PaymentRequest;
 
+use App\Models\PaymentRequest;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -9,7 +10,7 @@ class StorePaymentRequestRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isEmployee() ?? false;
+        return $this->user()?->can('create', PaymentRequest::class) ?? false;
     }
 
     public function rules(): array
