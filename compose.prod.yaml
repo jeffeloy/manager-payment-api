@@ -1,0 +1,17 @@
+# Override para produção (Oracle VM). Uso:
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+
+services:
+    api:
+        ports:
+            - '${APP_PORT:-8080}:80'
+        environment:
+            SAIL_XDEBUG_MODE: 'off'
+            XDEBUG_CONFIG: ''
+            APP_ENV: production
+
+    mysql:
+        ports: []
+
+    redis:
+        ports: []

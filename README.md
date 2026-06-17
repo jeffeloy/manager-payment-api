@@ -67,7 +67,26 @@ docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/htm
 docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html laravelsail/php84-composer:latest php artisan test
 ```
 
-Com Sail (`compose.yaml`), suba com `docker compose up -d` e acesse a API em `http://localhost:8080/api`.
+Com Sail (`compose.yaml`), suba com `docker compose up -d --build` e acesse:
+
+- **API:** `http://localhost:8080/api`
+- **UI demo:** `http://localhost:8080/login`
+
+Na primeira subida, o container compila automaticamente os assets do frontend (`npm ci` + `npm run build`) se `public/build/manifest.json` ainda não existir. Não é necessário entrar no container para rodar `npm run dev`.
+
+Para desenvolvimento com hot reload (opcional):
+
+```bash
+docker compose exec api npm run dev
+```
+
+A UI passa a usar o Vite dev server em `http://localhost:5173`. Para pular o build automático na subida: `SKIP_FRONTEND_BUILD=1 docker compose up -d`.
+
+Rebuild manual dos assets:
+
+```bash
+docker compose exec api npm run build
+```
 
 As chaves Passport (`storage/oauth-*.key`) exigem permissões restritas (`600` na private, `640` na public). O app corrige isso automaticamente no boot; se ainda falhar no Insomnia, rode dentro do container:
 
@@ -75,6 +94,41 @@ As chaves Passport (`storage/oauth-*.key`) exigem permissões restritas (`600` n
 docker compose exec api chmod 600 storage/oauth-private.key
 docker compose exec api chmod 640 storage/oauth-public.key
 ```
+
+### Deploy em produção (Oracle Cloud Always Free)
+
+Guia completo: [docs/deploy-oracle.md](docs/deploy-oracle.md)
+
+Resumo na VM:
+
+```bash
+git clone git@github.com:SEU_USUARIO/manager-payment-api.git
+cd manager-payment-api
+cp .env.production.example .env
+# Edite APP_URL=http://SEU_IP:8080 e DB_PASSWORD
+bash scripts/oracle-bootstrap.sh
+bash scripts/oracle-deploy.sh
+bash scripts/oracle-validate.sh
+```
+
+HTTPS (Fase 2): `sudo bash scripts/oracle-setup-nginx.sh demo.seudominio.com`
+
+## Demo ao vivo
+
+> Substitua `SEU_IP_OU_DOMINIO` após o deploy na Oracle VM.
+
+| | URL |
+|---|-----|
+| **UI (login)** | `http://SEU_IP_OU_DOMINIO:8080/login` |
+| **API base** | `http://SEU_IP_OU_DOMINIO:8080/api` |
+| **Health** | `http://SEU_IP_OU_DOMINIO:8080/up` |
+
+| Perfil | Email | Senha |
+|--------|-------|-------|
+| Employee | `ana.silva@manager.test` | `password` |
+| Finance | `finance.admin@manager.test` | `password` |
+
+Documentação da API: ver seção [Documentação da API](#documentação-da-api) abaixo.
 
 ## Usuários de teste (seed)
 

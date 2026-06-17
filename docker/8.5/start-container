@@ -22,5 +22,9 @@ if [ $# -gt 0 ]; then
         exec gosu $WWWUSER "$@"
     fi
 else
+    if [ "${LARAVEL_SAIL:-}" = "1" ] && [ "${SKIP_FRONTEND_BUILD:-}" != "1" ]; then
+        gosu "${SUPERVISOR_PHP_USER}" /usr/local/bin/ensure-frontend-assets || true
+    fi
+
     exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 fi
