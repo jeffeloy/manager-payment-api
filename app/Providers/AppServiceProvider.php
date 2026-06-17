@@ -8,6 +8,7 @@ use App\Policies\PaymentRequestPolicy;
 use App\Services\ExchangerateApiProvider;
 use App\Support\PassportKeyPermissions;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
 use Illuminate\Support\Facades\Vite;
@@ -24,6 +25,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         Gate::policy(PaymentRequest::class, PaymentRequestPolicy::class);
 
         PassportKeyPermissions::fix();

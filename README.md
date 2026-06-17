@@ -130,9 +130,9 @@ Resumo:
 
 | | URL |
 |---|-----|
-| **UI (login)** | `https://SEU-SERVICO.onrender.com/login` |
-| **API base** | `https://SEU-SERVICO.onrender.com/api` |
-| **Health** | `https://SEU-SERVICO.onrender.com/up` |
+| **UI (login)** | `https://manager-payment-api.onrender.com/login` |
+| **API base** | `https://manager-payment-api.onrender.com/api` |
+| **Health** | `https://manager-payment-api.onrender.com/up` |
 
 Render free: após ~15 min sem uso, 1ª visita pode levar ~1 min (cold start).
 
