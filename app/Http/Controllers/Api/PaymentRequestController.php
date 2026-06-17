@@ -46,7 +46,8 @@ class PaymentRequestController extends Controller
         $stats = (clone $query)->selectRaw("
             count(case when status = 'pending' then 1 end) as pending,
             count(case when status = 'approved' then 1 end) as approved,
-            count(case when status = 'rejected' then 1 end) as rejected
+            count(case when status = 'rejected' then 1 end) as rejected,
+            count(case when status = 'expired' then 1 end) as expired
         ")->first();
 
         return Inertia::render('PaymentRequest/Index', [
@@ -55,7 +56,8 @@ class PaymentRequestController extends Controller
                 'pending' => $stats->pending,
                 'approved' => $stats->approved,
                 'rejected' => $stats->rejected,
-            ]
+                'expired' => $stats->expired,
+            ],
         ]);
     }
 
