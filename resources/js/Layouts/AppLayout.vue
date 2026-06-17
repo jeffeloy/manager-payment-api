@@ -2,6 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import AppSidebar from '@/components/app/AppSidebar.vue';
 import UserMenu from '@/components/app/UserMenu.vue';
+import FlashAlert from '@/components/app/FlashAlert.vue';
 
 defineProps<{
     title: string;
@@ -29,6 +30,7 @@ defineProps<{
             </header>
 
             <main class="flex-1 space-y-6 p-6">
+                <FlashAlert />
                 <slot />
             </main>
         </div>

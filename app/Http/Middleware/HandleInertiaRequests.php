@@ -38,6 +38,10 @@ class HandleInertiaRequests extends Middleware
                     ? UserResource::make($request->user())->resolve()
                     : null,
             ],
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
             'ziggy' => fn () => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
