@@ -1,0 +1,41 @@
+# Blueprint Render — conecte o repo em https://dashboard.render.com
+# Neon: cole DB_URL manualmente nas env vars (não commitar).
+
+services:
+  - type: web
+    name: manager-payment-api
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: master
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: Manager Payment API
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: LOG_LEVEL
+        value: warning
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        sync: false
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        sync: false
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: VITE_APP_NAME
+        value: Manager Payment API
+      - key: EXCHANGE_RATE_API_URL
+        value: https://api.exchangerate-api.com/v4
+      - key: EXCHANGE_RATE_SOURCE
+        value: https://api.exchangerate-api.com

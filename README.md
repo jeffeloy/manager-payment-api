@@ -113,15 +113,28 @@ bash scripts/oracle-validate.sh
 
 HTTPS (Fase 2): `sudo bash scripts/oracle-setup-nginx.sh demo.seudominio.com`
 
+### Deploy em produção (Render + Neon — recomendado se Oracle sem capacidade)
+
+Guia completo: [docs/deploy-render.md](docs/deploy-render.md)
+
+Resumo:
+
+1. **Neon** — crie projeto Postgres e copie `DB_URL`
+2. **Render** — New Blueprint → repo GitHub → [`render.yaml`](render.yaml)
+3. Env vars: `APP_URL`, `DB_URL`, `APP_KEY` (ver [`.env.render.example`](.env.render.example))
+4. Deploy automático → URL `https://seu-servico.onrender.com`
+
 ## Demo ao vivo
 
-> Substitua `SEU_IP_OU_DOMINIO` após o deploy na Oracle VM.
+> Substitua pela URL após deploy (**Render** ou **Oracle**).
 
 | | URL |
 |---|-----|
-| **UI (login)** | `http://SEU_IP_OU_DOMINIO:8080/login` |
-| **API base** | `http://SEU_IP_OU_DOMINIO:8080/api` |
-| **Health** | `http://SEU_IP_OU_DOMINIO:8080/up` |
+| **UI (login)** | `https://SEU-SERVICO.onrender.com/login` |
+| **API base** | `https://SEU-SERVICO.onrender.com/api` |
+| **Health** | `https://SEU-SERVICO.onrender.com/up` |
+
+Render free: após ~15 min sem uso, 1ª visita pode levar ~1 min (cold start).
 
 | Perfil | Email | Senha |
 |--------|-------|-------|

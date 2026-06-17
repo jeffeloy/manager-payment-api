@@ -46,7 +46,13 @@ class DatabaseSeeder extends Seeder
 
     private function installPassportClient(): void
     {
-        $this->command?->call('passport:keys', ['--force' => true]);
+        $hasKeyFiles = file_exists(storage_path('oauth-private.key'));
+        $hasKeyEnv = config('passport.private_key') !== null && config('passport.private_key') !== '';
+
+        if (! $hasKeyFiles && ! $hasKeyEnv) {
+            $this->command?->call('passport:keys', ['--force' => true]);
+        }
+
         PassportKeyPermissions::fix();
 
         $clients = app(ClientRepository::class);
