@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Passport\Passport;
 use Tests\InstallsPassport;
 use Tests\TestCase;
 
@@ -92,5 +93,31 @@ class AuthTest extends TestCase
             'email' => 'invalid.login@manager.test',
             'password' => 'wrong-password',
         ])->assertUnauthorized();
+    }
+
+    public function test_authenticated_user_can_fetch_profile(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Profile User',
+            'email' => 'profile.user@manager.test',
+        ]);
+
+        Passport::actingAs($user);
+
+        $this->getJson('/api/user')
+            ->assertOk()
+            ->assertJsonPath('data.id', $user->id)
+            ->assertJsonPath('data.name', 'Profile User')
+            ->assertJsonPath('data.email', 'profile.user@manager.test')
+            ->assertJsonStructure([
+                'data' => ['id', 'name', 'email', 'role', 'country', 'currency', 'created_at'],
+            ]);
+    }
+
+    public function test_protected_routes_return_401_without_token(): void
+    {
+        $this->getJson('/api/user')->assertUnauthorized();
+        $this->getJson('/api/payment-requests')->assertUnauthorized();
+        $this->postJson('/api/logout')->assertUnauthorized();
     }
 }

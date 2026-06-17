@@ -6,6 +6,7 @@ use App\Data\ExchangeRateSnapshot;
 use App\Enums\PaymentRequestStatus;
 use App\Enums\UserRole;
 use App\Exceptions\PaymentRequestConflictException;
+use App\Models\PaymentRequest;
 use App\Models\User;
 use App\Services\ExchangeRateService;
 use App\Services\PaymentRequestService;
@@ -163,5 +164,87 @@ class PaymentRequestServiceTest extends TestCase
         $this->expectException(PaymentRequestConflictException::class);
 
         $service->approve($paymentRequest->fresh(), $finance);
+    }
+
+    public function test_query_for_user_scopes_to_own_requests_for_employee(): void
+    {
+        $service = new PaymentRequestService(app(ExchangeRateService::class));
+        $employee = User::factory()->create(['role' => UserRole::Employee]);
+        $otherEmployee = User::factory()->create(['role' => UserRole::Employee]);
+
+        PaymentRequest::factory()->create(['user_id' => $employee->id, 'title' => 'Mine']);
+        PaymentRequest::factory()->create(['user_id' => $otherEmployee->id, 'title' => 'Other']);
+
+        $results = $service->listForUser($employee);
+
+        $this->assertCount(1, $results);
+        $this->assertSame('Mine', $results->first()->title);
+    }
+
+    public function test_query_for_user_returns_all_for_finance(): void
+    {
+        $service = new PaymentRequestService(app(ExchangeRateService::class));
+        $finance = User::factory()->finance()->create();
+        $employeeA = User::factory()->create(['role' => UserRole::Employee]);
+        $employeeB = User::factory()->create(['role' => UserRole::Employee]);
+
+        PaymentRequest::factory()->create(['user_id' => $employeeA->id]);
+        PaymentRequest::factory()->create(['user_id' => $employeeB->id]);
+
+        $results = $service->listForUser($finance);
+
+        $this->assertCount(2, $results);
+    }
+
+    public function test_query_for_user_filters_by_status(): void
+    {
+        $service = new PaymentRequestService(app(ExchangeRateService::class));
+        $employee = User::factory()->create(['role' => UserRole::Employee]);
+
+        PaymentRequest::factory()->create([
+            'user_id' => $employee->id,
+            'status' => PaymentRequestStatus::Pending,
+        ]);
+
+        PaymentRequest::factory()->approved()->create([
+            'user_id' => $employee->id,
+        ]);
+
+        $results = $service->listForUser($employee, PaymentRequestStatus::Pending->value);
+
+        $this->assertCount(1, $results);
+        $this->assertSame(PaymentRequestStatus::Pending, $results->first()->status);
+    }
+
+    public function test_stats_for_user_counts_by_status(): void
+    {
+        $service = new PaymentRequestService(app(ExchangeRateService::class));
+        $employee = User::factory()->create(['role' => UserRole::Employee]);
+        $otherEmployee = User::factory()->create(['role' => UserRole::Employee]);
+        $finance = User::factory()->finance()->create();
+
+        PaymentRequest::factory()->create([
+            'user_id' => $employee->id,
+            'status' => PaymentRequestStatus::Pending,
+        ]);
+
+        PaymentRequest::factory()->approved()->create([
+            'user_id' => $employee->id,
+        ]);
+
+        PaymentRequest::factory()->rejected()->create([
+            'user_id' => $otherEmployee->id,
+        ]);
+
+        $employeeStats = $service->statsForUser($employee);
+        $financeStats = $service->statsForUser($finance);
+
+        $this->assertSame(1, $employeeStats['pending']);
+        $this->assertSame(1, $employeeStats['approved']);
+        $this->assertSame(0, $employeeStats['rejected']);
+
+        $this->assertSame(1, $financeStats['pending']);
+        $this->assertSame(1, $financeStats['approved']);
+        $this->assertSame(1, $financeStats['rejected']);
     }
 }

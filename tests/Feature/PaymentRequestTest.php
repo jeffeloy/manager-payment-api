@@ -169,4 +169,85 @@ class PaymentRequestTest extends TestCase
             'currency' => 'BRL',
         ])->assertStatus(503);
     }
+
+    public function test_employee_can_show_own_payment_request(): void
+    {
+        $employee = User::factory()->create(['role' => UserRole::Employee]);
+
+        $paymentRequest = PaymentRequest::factory()->create([
+            'user_id' => $employee->id,
+            'title' => 'My request',
+        ]);
+
+        Passport::actingAs($employee);
+
+        $this->getJson("/api/payment-requests/{$paymentRequest->id}")
+            ->assertOk()
+            ->assertJsonPath('data.id', $paymentRequest->id)
+            ->assertJsonPath('data.title', 'My request');
+    }
+
+    public function test_employee_cannot_show_other_employees_payment_request(): void
+    {
+        $employee = User::factory()->create(['role' => UserRole::Employee]);
+        $otherEmployee = User::factory()->create(['role' => UserRole::Employee]);
+
+        $paymentRequest = PaymentRequest::factory()->create([
+            'user_id' => $otherEmployee->id,
+        ]);
+
+        Passport::actingAs($employee);
+
+        $this->getJson("/api/payment-requests/{$paymentRequest->id}")
+            ->assertForbidden();
+    }
+
+    public function test_finance_user_cannot_create_payment_request(): void
+    {
+        Http::fake();
+
+        $finance = User::factory()->finance()->create();
+
+        Passport::actingAs($finance);
+
+        $this->postJson('/api/payment-requests', [
+            'title' => 'Office supplies',
+            'amount' => 100,
+            'currency' => 'EUR',
+        ])->assertForbidden();
+
+        Http::assertNothingSent();
+    }
+
+    public function test_approve_non_pending_request_returns_403(): void
+    {
+        $finance = User::factory()->finance()->create();
+        $employee = User::factory()->create(['role' => UserRole::Employee]);
+
+        $approved = PaymentRequest::factory()->approved()->create([
+            'user_id' => $employee->id,
+        ]);
+
+        Passport::actingAs($finance);
+
+        $this->patchJson("/api/payment-requests/{$approved->id}/approve")
+            ->assertForbidden();
+    }
+
+    public function test_reject_requires_rejection_reason(): void
+    {
+        $finance = User::factory()->finance()->create();
+        $employee = User::factory()->create(['role' => UserRole::Employee]);
+
+        $pending = PaymentRequest::factory()->create([
+            'user_id' => $employee->id,
+            'status' => PaymentRequestStatus::Pending,
+        ]);
+
+        Passport::actingAs($finance);
+
+        $this->patchJson("/api/payment-requests/{$pending->id}/reject", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('rejection_reason');
+    }
 }
